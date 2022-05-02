@@ -105,7 +105,7 @@ if __name__ == '__main__':
     IS_scores =  IS(trajectories, p_e=policy, p_b=behav, period=period)
 
     print("Exhaustive SIS")
-    SA_sets=[[]] + [[-1,1]] + [[0]] + [[-2,2]] + [[-3,3]]
+    SA_sets=[[]] + [[-1,1]] + [[0]] + [[1]] + [[2]] + [[3]] + [[-2,2]] + [[-3,3]]
     #SA_sets=[[]] + [[(s,a)] for s,a in lifts_int.items()] + [[(s,a) for s,a in lifts_int.items()]] + [[(s,a)] for s in states for a,act in enumerate(actions)]
     best_G, best_s_set = Exhaustive_SIS(trajectories, SA_sets, p_e=policy, p_b=behav, weighted=False)
     SIS_scores = SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False,period=period)
