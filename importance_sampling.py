@@ -154,7 +154,7 @@ def WPDIS(trajectories, p_e, p_b, period=float("inf")):
 #     print("best_sa_set",best_sa_set)
 #     return best_G, best_sa_set
 
-def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False,period=float("inf")):
+def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     """
     exhaustively search for the best drop across sets of SA-pairs
     :param trajectories:
@@ -222,6 +222,55 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False,period=float("inf"
     print("best_state_set",best_s_set)
     return best_G, best_s_set
 
+
+def SIS(trajectories,S_set,p_e,p_b,weighted=False,period=float("inf")):
+    """
+    SIS for a particular given state-set
+    :param trajectories:
+    :param SAs:
+    :param p_e:
+    :param p_b:
+    :param period:
+    :return:
+    """
+
+    As = []
+    Bs = []
+    rs = []
+    scores=[]
+    SW=0
+    for i, trajectory in enumerate(trajectories):
+        # variance is the fluctuation in frequency of SAs between trajectories
+        A = 1
+        B = 1
+        G_temp = 0
+        for (s,a,r) in trajectory:
+            ro = p_e[s][a]/p_b[s][a]
+            # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
+            if s in S_set:     # random variable
+                A*=ro
+            else:
+                B*=ro
+            G_temp += r
+        As.append(A)
+        SW += B
+        Bs.append(B)
+        rs.append(G_temp)
+        if i % period == 0:
+            Br = np.array(Bs) * np.array(rs)  # estimated returns at a (s,a)-set
+            if weighted:
+                E_G = np.sum(Br) / SW
+            else:
+                E_G = np.mean(Br)
+            scores.append(E_G)
+    #final score
+    Br = np.array(Bs) * np.array(rs)  # estimated returns at a (s,a)-set
+    if weighted:
+        E_G = np.sum(Br) / SW
+    else:
+        E_G = np.mean(Br)
+    scores.append(E_G)
+    return scores
 
 def Exhaustive_SPDIS(trajectories,S_sets,p_e,p_b,period=float("inf")):
     """

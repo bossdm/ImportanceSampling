@@ -78,7 +78,7 @@ if __name__ == '__main__':
     policy = optimal_policy()
     # behaviour policy
     behav = [[0.50,0.50] for i in range(domain_size)]
-    #_ , eval_score = monte_carlo_eval(policy)
+    _ , eval_score = monte_carlo_eval(policy)
 
     trajectories, behav_score = monte_carlo_eval(behav)
 
@@ -105,15 +105,20 @@ if __name__ == '__main__':
     IS_scores =  IS(trajectories, p_e=policy, p_b=behav, period=period)
 
     print("Exhaustive SIS")
-    SA_sets=[[]] + [[-1,1]] + [[0]]
+    SA_sets=[[]] + [[-1,1]] + [[0]] + [[-2,2]] + [[-3,3]]
     #SA_sets=[[]] + [[(s,a)] for s,a in lifts_int.items()] + [[(s,a) for s,a in lifts_int.items()]] + [[(s,a)] for s in states for a,act in enumerate(actions)]
-    Exhaustive_SIS(trajectories, SA_sets, p_e=policy, p_b=behav,weighted=True)
+    best_G, best_s_set = Exhaustive_SIS(trajectories, SA_sets, p_e=policy, p_b=behav, weighted=False)
+    SIS_scores = SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False,period=period)
+
+    best_G, best_s_set = Exhaustive_SIS(trajectories, SA_sets, p_e=policy, p_b=behav,weighted=True)
+    WSIS_scores = SIS(trajectories,best_s_set,p_e=policy,p_b=behav,weighted=True,period=period)
 
     #Exhaustive_SPDIS(trajectories, SA_sets, p_e=policy, p_b=behav)
     line1, = plt.plot(x,IS_scores,marker="v")
     line2, = plt.plot(x,WIS_scores,marker="o")
     line3, = plt.plot(x,PDIS_scores,marker="x")
-    #line4, = plt.plot(x,WPDIS_scores,marker="D")
-    #plt.legend([line1,line2,line3,line4],["IS","WIS","PDIS","WPDIS"])
+    line4, = plt.plot(x,SIS_scores,marker="D")
+    line5, = plt.plot(x, WSIS_scores, marker="X")
+    plt.legend([line1,line2,line3,line4,line5],["IS","WIS","PDIS","SIS","WSIS"])
     plt.savefig("convergence.pdf")
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
