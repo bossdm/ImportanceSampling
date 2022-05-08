@@ -1,16 +1,22 @@
 import numpy as np
 
-def IS(trajectories,p_e,p_b,period=float("inf")):
+def IS(trajectories,p_e=None,p_b=None,period=float("inf")):
     printfile=open("importance_trajectories.txt","w")
     E_G = 0
     scores=[]
     for i, trajectory in enumerate(trajectories):
         G=0
         importance = 1
-        for (s,a,r) in trajectory:
-            importance*= p_e[s][a]/p_b[s][a]
-            printfile.write("%.4f,%.4f,%.4f,"%(p_e[s][a],p_b[s][a],r))
-            G += r
+        if p_e is None and p_b is None:
+            for (s,a,r, rho) in trajectory:
+                importance*= rho
+                #printfile.write("%.4f,%.4f,%.4f,"%(p_e[s][a],p_b[s][a],r))
+                G += r
+        else:
+            for (s,a,r) in trajectory:
+                importance*= rho
+                #printfile.write("%.4f,%.4f,%.4f,"%(p_e[s][a],p_b[s][a],r))
+                G += r
         printfile.write("\n")
         G = importance*G
         E_G+=G
@@ -27,9 +33,14 @@ def WIS(trajectories,p_e,p_b,period=float("inf")):
     for i, trajectory in enumerate(trajectories):
         G=0
         importance = 1
-        for (s,a,r) in trajectory:
-            importance*= p_e[s][a]/p_b[s][a]
-            G += r
+        if p_e is None and p_b is None:
+            for (s,a,r, rho) in trajectory:
+                importance*= rho
+                G += r
+        else:
+            for (s,a,r) in trajectory:
+                importance*= p_e[s][a]/p_b[s][a]
+                G += r
         G = importance*G
         SW+=importance
         E_G+=G
@@ -47,8 +58,12 @@ def PDIS(trajectories,p_e,p_b,period=float("inf")):
         G=0
         for t in range(1,len(trajectory)+1):
             importance_prod = 1
-            for (s,a,r) in trajectory[0:t]:
-                importance_prod = importance_prod * p_e[s][a]/p_b[s][a]
+            if p_e is None and p_b is None:
+                for (s,a,r,rho) in trajectory[0:t]:
+                    importance_prod = importance_prod * rho
+            else:
+                for (s,a,r) in trajectory[0:t]:
+                    importance_prod = importance_prod * p_e[s][a]/p_b[s][a]
             # use the last r
             G += importance_prod * r
         E_G+=G
@@ -72,14 +87,21 @@ def WPDIS(trajectories, p_e, p_b, period=float("inf")):
         for i in range(len(trajectories)):
             traj = trajectories[i]
             if len(traj) > t:
-                s,a,r = traj[t]
-                ro = p_e[s][a] / p_b[s][a]
+                if p_e is None and p_b is None:
+                    s,a,r,ro = traj[t]
+                else:
+                    s,a,r = traj[t]
+                    ro = p_e[s][a] / p_b[s][a]
                 ro_cum[i] *= ro
         SW = np.sum(ro_cum)
         for i in range(len(trajectories)):
             traj = trajectories[i]
             if len(traj) > t:
-                s,a,r = traj[t]
+                if p_e is None and p_b is None:
+                    s, a, r, ro = traj[t]
+                else:
+                    s, a, r = traj[t]
+
                 E_G += ro_cum[i] / SW  * r
     print("WPDIS ", E_G)
     return E_G
@@ -177,14 +199,23 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
             A = 1
             B = 1
             G_temp = 0
-            for (s,a,r) in trajectory:
-                ro = p_e[s][a]/p_b[s][a]
-                # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
-                if s in Ss:     # random variable
-                    A*=ro
-                else:
-                    B*=ro
-                G_temp += r
+            if p_e is None and p_b is None:
+                for (s,a,r,ro) in trajectory:
+                    # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
+                    if s in Ss:     # random variable
+                        A*=ro
+                    else:
+                        B*=ro
+                    G_temp += r
+            else:
+                for (s,a,r) in trajectory:
+                    ro = p_e[s][a]/p_b[s][a]
+                    # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
+                    if s in Ss:     # random variable
+                        A*=ro
+                    else:
+                        B*=ro
+                    G_temp += r
             As.append(A)
             SW += B
             Bs.append(B)
@@ -244,15 +275,23 @@ def SIS(trajectories,S_set,p_e,p_b,weighted=False,period=float("inf")):
         A = 1
         B = 1
         G_temp = 0
-        for (s,a,r) in trajectory:
-            ro = p_e[s][a]/p_b[s][a]
-            # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
-            if s in S_set:     # random variable
-                A*=ro
-            else:
-                B*=ro
-            G_temp += r
-        As.append(A)
+        if p_e is None and p_b is None:
+            for (s, a, r, ro) in trajectory:
+                # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
+                if s in Ss:  # random variable
+                    A *= ro
+                else:
+                    B *= ro
+                G_temp += r
+        else:
+            for (s, a, r) in trajectory:
+                ro = p_e[s][a] / p_b[s][a]
+                # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
+                if s in Ss:  # random variable
+                    A *= ro
+                else:
+                    B *= ro
+                G_temp += r
         SW += B
         Bs.append(B)
         rs.append(G_temp)
