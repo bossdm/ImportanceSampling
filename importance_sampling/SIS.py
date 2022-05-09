@@ -11,6 +11,8 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     :param period:
     :return:
     """
+    writefile=open("SIS_log.txt","w")
+    writefile.write("S^A \t G \t V \t C \t hatA\n")
     epsilon=0.001
     best_setsize=-1
     best_MSE = float("inf")
@@ -58,16 +60,13 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
             G = np.sum(Br)
         else:
             G = np.mean(Br)
-        print("G =", G)
-        print("V=",V)
-        print("C=", C)
         hatA = np.mean(As)
-        print("hatA=",hatA)
+        writefile.write(str(Ss) + "\t" + str(G) + "\t" + str(V) + "\t" + str(C) + "\t" + str(hatA) + "\n")
         if hatA > 2 or hatA < 0.50:  # don't consider these
             continue
         # if C[0,1] >= 0.5*V:  # don't consider these
         #     continue
-        print("Ss ",Ss)
+
         if MSE < best_MSE + epsilon:
             if len(Ss) > best_setsize:
                 best_setsize=len(Ss)
