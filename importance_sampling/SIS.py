@@ -62,7 +62,7 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
             G = np.mean(Br)
         hatA = np.mean(As)
         writefile.write(str(Ss) + "\t" + str(G) + "\t" + str(V) + "\t" + str(C) + "\t" + str(hatA) + "\n")
-        if hatA > 1.10 or hatA < 0.90:  # don't consider these
+        if hatA > 1+epsilon or hatA < 1-epsilon:  # don't consider these
             continue
         # if C[0,1] >= 0.5*V:  # don't consider these
         #     continue
