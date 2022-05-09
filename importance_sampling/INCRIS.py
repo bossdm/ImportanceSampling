@@ -37,6 +37,9 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     Br = np.array(Bs) * np.array(rs)
     V = np.var(Br)
     C = np.cov(As, Br)
+    # print("Br",np.mean(Br))
+    # print("avg A",np.mean(A))
+    # print("C", np.mean(C))
     MSE = V + C[0, 1] ** 2
     return MSE, Br
 def INCRIS(trajectories,p_e,p_b,H,weighted=False):

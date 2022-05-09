@@ -10,7 +10,7 @@ reward_grid = [-1] + [0 for i in range(domain_size-2)] + [+1]
 bound=domain_size//2
 states=list(range(-bound,+bound+1))
 actions = [-1,+1]
-MC_iterations=10000
+MC_iterations=100000
 
 
 def manhattan_dist(a,b):
