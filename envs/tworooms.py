@@ -112,6 +112,11 @@ wwwwwwwwwwwww
         """
         self.ep_steps += 1
 
+        # SC edit: Make the doorway a portal such that whenever at the doorway, always thrown into the other room (right)
+        if self.currentcell == (10,6):
+            nextcell = (10,7)
+            self.currentcell = nextcell
+
         nextcell = tuple(self.currentcell + self.directions[action])
         if not self.occupancy[nextcell]:
             if self.rng.uniform() < 1/3.:
