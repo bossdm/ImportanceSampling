@@ -23,6 +23,7 @@ def get_A_B_r(k,t,trajectory,p_e,p_b):
         return A, B, r  # takes the very last reward (r_t)
 
 def get_MSE(k,t,trajectories,p_e,p_b):
+    eps = 0.05
     # empty list for new k
     As = []
     Bs = []
@@ -40,6 +41,8 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     # print("Br",np.mean(Br))
     # print("avg A",np.mean(A))
     # print("C", np.mean(C))
+    if np.abs(np.mean(A) - 1.0) > eps:
+        return float("inf"), Br  # never choose these when mean is not close to 1.0
     MSE = V + C[0, 1] ** 2
     return MSE, Br
 def INCRIS(trajectories,p_e,p_b,H,weighted=False):
@@ -66,6 +69,7 @@ def INCRIS(trajectories,p_e,p_b,H,weighted=False):
                 r_t = np.mean(Br)
         G+=r_t
         best_ks.append(best_k)
+        print("best k", best_k)
     return G, best_ks
 
 def INCRIS_scores(trajectories,p_e,p_b,H,best_ks,weighted=False,period=float("inf")):
