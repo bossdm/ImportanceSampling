@@ -1,5 +1,6 @@
 
-from importance_sampling import *
+from importance_sampling.baselines import *
+from importance_sampling.SIS import *
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':

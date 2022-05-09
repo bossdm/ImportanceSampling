@@ -1,180 +1,5 @@
 import numpy as np
 
-def IS(trajectories,p_e=None,p_b=None,period=float("inf")):
-    printfile=open("importance_trajectories.txt","w")
-    E_G = 0
-    scores=[]
-    for i, trajectory in enumerate(trajectories):
-        G=0
-        importance = 1
-        if p_e is None and p_b is None:
-            for (s,a,r, rho) in trajectory:
-                importance*= rho
-                #printfile.write("%.4f,%.4f,%.4f,"%(p_e[s][a],p_b[s][a],r))
-                G += r
-        else:
-            for (s,a,r) in trajectory:
-                importance*= rho
-                #printfile.write("%.4f,%.4f,%.4f,"%(p_e[s][a],p_b[s][a],r))
-                G += r
-        printfile.write("\n")
-        G = importance*G
-        E_G+=G
-        if i % period == 0:
-            scores.append(E_G/(i+1))
-    scores.append(E_G / len(trajectories))
-    print("IS ", scores[-1])
-    return scores
-
-def WIS(trajectories,p_e,p_b,period=float("inf")):
-    E_G = 0
-    SW = 0
-    scores=[]
-    for i, trajectory in enumerate(trajectories):
-        G=0
-        importance = 1
-        if p_e is None and p_b is None:
-            for (s,a,r, rho) in trajectory:
-                importance*= rho
-                G += r
-        else:
-            for (s,a,r) in trajectory:
-                importance*= p_e[s][a]/p_b[s][a]
-                G += r
-        G = importance*G
-        SW+=importance
-        E_G+=G
-        if i % period == 0:
-            print(i)
-            scores.append(E_G/SW)
-    scores.append(E_G/SW)
-    print("WIS ", scores[-1])
-    return scores
-
-def PDIS(trajectories,p_e,p_b,period=float("inf")):
-    E_G = 0
-    scores=[]
-    for i, trajectory in enumerate(trajectories):
-        G=0
-        for t in range(1,len(trajectory)+1):
-            importance_prod = 1
-            if p_e is None and p_b is None:
-                for (s,a,r,rho) in trajectory[0:t]:
-                    importance_prod = importance_prod * rho
-            else:
-                for (s,a,r) in trajectory[0:t]:
-                    importance_prod = importance_prod * p_e[s][a]/p_b[s][a]
-            # use the last r
-            G += importance_prod * r
-        E_G+=G
-        if i % period == 0:
-            scores.append(E_G/(i+1))
-    scores.append(E_G / len(trajectories))
-    print("PDIS ",scores[-1])
-    return scores
-#
-def WPDIS(trajectories, p_e, p_b, period=float("inf")):
-    ro_cum = np.ones(shape=(len(trajectories),)) # cumulant vector for ro_t
-    r_t = np.zeros(shape=(len(trajectories),))  # cumulant vector for ro_t
-    E_G =  0
-    H=0
-    for traj in trajectories:
-        if len(traj) > H:
-            H = len(traj)
-
-    for t in range(H):
-        # initialise ro-vector with all ones
-        for i in range(len(trajectories)):
-            traj = trajectories[i]
-            if len(traj) > t:
-                if p_e is None and p_b is None:
-                    s,a,r,ro = traj[t]
-                else:
-                    s,a,r = traj[t]
-                    ro = p_e[s][a] / p_b[s][a]
-                ro_cum[i] *= ro
-        SW = np.sum(ro_cum)
-        for i in range(len(trajectories)):
-            traj = trajectories[i]
-            if len(traj) > t:
-                if p_e is None and p_b is None:
-                    s, a, r, ro = traj[t]
-                else:
-                    s, a, r = traj[t]
-
-                E_G += ro_cum[i] / SW  * r
-    print("WPDIS ", E_G)
-    return E_G
-# def WPDIS(trajectories,p_e,p_b,period=float("inf")):
-#     E_G = 0
-#     SW = 0
-#     scores=[]
-#     for i, trajectory in enumerate(trajectories):
-#         G=0
-#         for t in range(1,len(trajectory)+1):
-#             importance_prod = 1
-#             for (s,a,r) in trajectory[0:t]:
-#                 importance_prod = importance_prod * p_e[s][a]/p_b[s][a]
-#             # use the last r
-#             G += importance_prod * r
-#             SW+=importance_prod
-#         E_G += G
-#         if i % period == 0:
-#             scores.append(E_G / SW)
-#     scores.append(E_G / SW)
-#     print("WPDIS ", scores[-1])
-#     return scores
-
-# def Exhaustive_SIS(trajectories,SA_sets,p_e,p_b,period=float("inf")):
-#     """
-#     exhaustively search for the best drop across sets of SA-pairs
-#     :param trajectories:
-#     :param SAs:
-#     :param p_e:
-#     :param p_b:
-#     :param period:
-#     :return:
-#     """
-#     best_MSE = float("inf")
-#     for SAs in SA_sets:
-#         As = []
-#         Bs = []
-#         rs = []
-#         for i, trajectory in enumerate(trajectories):
-#             # variance is the fluctuation in frequency of SAs between trajectories
-#             A = 1
-#             B = 1
-#             G_temp = 0
-#             for (s,a,r) in trajectory:
-#                 ro = p_e[s][a]/p_b[s][a]
-#                 # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
-#                 if (s,a) in SAs:     # random variable
-#                     A*=ro
-#                 else:
-#                     B*=ro
-#                 G_temp += r
-#
-#             As.append(A)
-#             Bs.append(B)
-#             rs.append(G_temp)
-#
-#
-#         Br=np.array(Bs)*np.array(rs)   # estimated returns at a (s,a)-set
-#         C= np.cov(As,Br)
-#         V = np.var(Br)
-#         MSE = V + C[0,1]**2 # MSE is variance + bias^2
-#         G = np.mean(Br)
-#         print("sa-set",SAs)
-#         print("G =", G)
-#         hatA = np.mean(As)
-#         print("hatA=",hatA)
-#         if MSE < best_MSE:
-#             best_MSE = MSE
-#             best_sa_set = SAs
-#             best_G = G
-#     print("best_G", best_G)
-#     print("best_sa_set",best_sa_set)
-#     return best_G, best_sa_set
 
 def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     """
@@ -254,7 +79,7 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     return best_G, best_s_set
 
 
-def SIS(trajectories,S_set,p_e,p_b,weighted=False,period=float("inf")):
+def SIS(trajectories,Ss,p_e,p_b,weighted=False,period=float("inf")):
     """
     SIS for a particular given state-set
     :param trajectories:
@@ -371,3 +196,56 @@ def Exhaustive_SPDIS(trajectories,S_sets,p_e,p_b,period=float("inf")):
     print("best_G", best_G)
     print("best_state_set",best_s_set)
     return best_G, best_s_set
+
+
+
+# def Exhaustive_SAIS(trajectories,SA_sets,p_e,p_b,period=float("inf")):
+#     """
+#     exhaustively search for the best drop across sets of SA-pairs
+#     :param trajectories:
+#     :param SAs:
+#     :param p_e:
+#     :param p_b:
+#     :param period:
+#     :return:
+#     """
+#     best_MSE = float("inf")
+#     for SAs in SA_sets:
+#         As = []
+#         Bs = []
+#         rs = []
+#         for i, trajectory in enumerate(trajectories):
+#             # variance is the fluctuation in frequency of SAs between trajectories
+#             A = 1
+#             B = 1
+#             G_temp = 0
+#             for (s,a,r) in trajectory:
+#                 ro = p_e[s][a]/p_b[s][a]
+#                 # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
+#                 if (s,a) in SAs:     # random variable
+#                     A*=ro
+#                 else:
+#                     B*=ro
+#                 G_temp += r
+#
+#             As.append(A)
+#             Bs.append(B)
+#             rs.append(G_temp)
+#
+#
+#         Br=np.array(Bs)*np.array(rs)   # estimated returns at a (s,a)-set
+#         C= np.cov(As,Br)
+#         V = np.var(Br)
+#         MSE = V + C[0,1]**2 # MSE is variance + bias^2
+#         G = np.mean(Br)
+#         print("sa-set",SAs)
+#         print("G =", G)
+#         hatA = np.mean(As)
+#         print("hatA=",hatA)
+#         if MSE < best_MSE:
+#             best_MSE = MSE
+#             best_sa_set = SAs
+#             best_G = G
+#     print("best_G", best_G)
+#     print("best_sa_set",best_sa_set)
+#     return best_G, best_sa_set

@@ -1,5 +1,7 @@
 
-from importance_sampling import *
+from importance_sampling.baselines import *
+from importance_sampling.SIS import *
+from importance_sampling.INCRIS import *
 import matplotlib.pyplot as plt
 
 
@@ -92,6 +94,13 @@ if __name__ == '__main__':
     num_plotpoints = MC_iterations // period
     x = [i * period for i in range(num_plotpoints+1)]
 
+    # note: this is intuitive but does not reflect how the algorithm would work for smaller number of trajectories; alternative is to recompute for each subset of
+    # trajectories until then
+    H = max([len(traj) for traj in trajectories])
+    best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=False)
+    INCRIS_score = INCRIS_scores(trajectories, p_e=policy, p_b=behav, H=H, best_ks=best_ks, weighted=False, period=period)
+    print("INCRIS")
+
     print("WPDIS")
     WPDIS_scores = WPDIS(trajectories, p_e=policy, p_b=behav, period=period)
 
@@ -112,6 +121,8 @@ if __name__ == '__main__':
 
     best_G, best_s_set = Exhaustive_SIS(trajectories, SA_sets, p_e=policy, p_b=behav,weighted=True)
     WSIS_scores = SIS(trajectories,best_s_set,p_e=policy,p_b=behav,weighted=True,period=period)
+    #
+
 
     #Exhaustive_SPDIS(trajectories, SA_sets, p_e=policy, p_b=behav)
     line1, = plt.plot(x,IS_scores,marker="v")
@@ -119,6 +130,7 @@ if __name__ == '__main__':
     line3, = plt.plot(x,PDIS_scores,marker="x")
     line4, = plt.plot(x,SIS_scores,marker="D")
     line5, = plt.plot(x, WSIS_scores, marker="X")
-    plt.legend([line1,line2,line3,line4,line5],["IS","WIS","PDIS","SIS","WSIS"])
+    line6, = plt.plot(x, INCRIS_score, marker="O")
+    plt.legend([line1,line2,line3,line4,line5],["IS","WIS","PDIS","SIS","WSIS","INCRIS"])
     plt.savefig("convergence.pdf")
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
