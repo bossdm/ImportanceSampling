@@ -10,13 +10,13 @@ def get_A_B_r(k,t,trajectory,p_e,p_b):
         if p_e is None and p_b is None:
             for (s, a, r, ro) in trajectory[0:t - k]:
                 A *= ro
-            for (s, a, r, ro) in trajectory[t - k:t]:
+            for (s, a, r, ro) in trajectory[t - k:t+1]:
                 B *= ro
         else:
             for (s, a, r) in trajectory[0:t - k]:
                 ro = p_e[s][a] / p_b[s][a]
                 A *=  ro
-            for (s, a, r) in trajectory[t - k:t]:
+            for (s, a, r) in trajectory[t - k:t+1]:
                 ro = p_e[s][a] / p_b[s][a]
                 B *= ro
 

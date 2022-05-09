@@ -10,7 +10,7 @@ reward_grid = [-1] + [0 for i in range(domain_size-2)] + [+1]
 bound=domain_size//2
 states=list(range(-bound,+bound+1))
 actions = [-1,+1]
-MC_iterations=100000
+MC_iterations=10000
 
 
 def manhattan_dist(a,b):
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     #data = trajectories,behav_score,eval_score
     #pickle.dump(data,open("data.pkl","wb"))
     #trajectories, behav_score, eval_score = pickle.load(open("data.pkl","rb")
-    period=1000
+    period=5000
     num_plotpoints = MC_iterations // period
     x = [i * period for i in range(num_plotpoints+1)]
 
@@ -98,6 +98,7 @@ if __name__ == '__main__':
     # trajectories until then
     H = max([len(traj) for traj in trajectories])
     best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=False)
+    print("INCRIS",best_G)
     INCRIS_score = INCRIS_scores(trajectories, p_e=policy, p_b=behav, H=H, best_ks=best_ks, weighted=False, period=period)
     print("INCRIS")
 
