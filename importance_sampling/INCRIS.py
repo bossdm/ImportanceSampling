@@ -70,7 +70,7 @@ def INCRIS(trajectories,p_e,p_b,H,weighted=False):
 
 def INCRIS_scores(trajectories,p_e,p_b,H,best_ks,weighted=False,period=float("inf")):
     G_scores= []
-    for num_traj in range(period,len(trajectories)+period):
+    for num_traj in range(period,len(trajectories)+period,period):
         for t in range(H):
             MSE, Br = get_MSE(best_ks[t], t, trajectories[0:num_traj], p_e, p_b)
             G = np.mean(Br)
