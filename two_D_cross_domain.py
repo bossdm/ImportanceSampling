@@ -3,6 +3,7 @@ from importance_sampling.baselines import *
 from importance_sampling.SIS import *
 from importance_sampling.INCRIS import *
 import matplotlib.pyplot as plt
+import itertools
 
 
 domain_size=9
@@ -105,6 +106,9 @@ def run_MDP(policy,seed):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     policy, behav =  policies()
+    S_sets=list(itertools.combinations(policy.keys(), 0)) + list(itertools.combinations(policy.keys(), 1)) + \
+            list(itertools.combinations(policy.keys(), 2)) + list(itertools.combinations(policy.keys(), 3)) + \
+    list(itertools.combinations(policy.keys(), 4))
     _ , eval_score = monte_carlo_eval(policy)
 
     trajectories, behav_score = monte_carlo_eval(behav)
@@ -140,12 +144,11 @@ if __name__ == '__main__':
     IS_scores =  IS(trajectories, p_e=policy, p_b=behav, period=period)
 
     print("Exhaustive SIS")
-    SA_sets=[[(0,0)] # TODO
     #SA_sets=[[]] + [[(s,a)] for s,a in lifts_int.items()] + [[(s,a) for s,a in lifts_int.items()]] + [[(s,a)] for s in states for a,act in enumerate(actions)]
-    best_G, best_s_set = Exhaustive_SIS(trajectories, SA_sets, p_e=policy, p_b=behav, weighted=False)
+    best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
     SIS_scores = SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False,period=period)
 
-    best_G, best_s_set = Exhaustive_SIS(trajectories, SA_sets, p_e=policy, p_b=behav,weighted=True)
+    best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav,weighted=True)
     WSIS_scores = SIS(trajectories,best_s_set,p_e=policy,p_b=behav,weighted=True,period=period)
     #
 
