@@ -20,7 +20,7 @@ def IS(trajectories,p_e=None,p_b=None,period=float("inf")):
         printfile.write("\n")
         G = importance*G
         E_G+=G
-        if i % period == 0:
+        if i > 0 and i % period == 0:
             scores.append(E_G/(i+1))
     scores.append(E_G / len(trajectories))
     print("IS ", scores[-1])
@@ -44,7 +44,7 @@ def WIS(trajectories,p_e,p_b,period=float("inf")):
         G = importance*G
         SW+=importance
         E_G+=G
-        if i % period == 0:
+        if i > 0 and i % period == 0:
             print(i)
             scores.append(E_G/SW)
     scores.append(E_G/SW)
@@ -67,7 +67,7 @@ def PDIS(trajectories,p_e,p_b,period=float("inf")):
             # use the last r
             G += importance_prod * r
         E_G+=G
-        if i % period == 0:
+        if i > 0 and i % period == 0:
             scores.append(E_G/(i+1))
     scores.append(E_G / len(trajectories))
     print("PDIS ",scores[-1])

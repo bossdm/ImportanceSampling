@@ -120,7 +120,7 @@ def SIS(trajectories,Ss,p_e,p_b,weighted=False,period=float("inf")):
         SW += B
         Bs.append(B)
         rs.append(G_temp)
-        if i % period == 0:
+        if i > 0 and i % period == 0:
             Br = np.array(Bs) * np.array(rs)  # estimated returns at a (s,a)-set
             if weighted:
                 E_G = np.sum(Br) / SW
