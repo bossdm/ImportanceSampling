@@ -42,10 +42,10 @@ def policies():
     """
     policy = {}
     behav_policy = {}
-    for i in range(-bound, +bound + 1):
+    for i in range(-bound-1, +bound):    # no decision needed for terminal states
         policy[(i,0)] = [0,1,0,0]  # W, E, S, N --> go east
         behav_policy[(i,0)] = [0.25,0.25,0.25,0.25]
-    for j in range(-bound, +bound + 1):
+    for j in range(-bound-1, +bound):    # no decision needed for terminal states
         policy[(0,j)] = [0,0,0,1]  # S, N, W, E --> go north
         behav_policy[(0,j)] = [0.25, 0.25, 0.25, 0.25]
 
@@ -82,12 +82,12 @@ def run_MDP(policy,seed):
         #print("state ", state)
         #print("action ", action)
 
-        state = next_state(state,action)
-        if state[0] != 0:
-            state_index = state[0] + bound
+        next_s = next_state(state,action)
+        if next_s[0] != 0:
+            state_index = next_s[0] + bound
             reward = reward_grid_x[state_index]
         elif state[1] != 0:
-            state_index = state[1] + bound
+            state_index = next_s[1] + bound
             reward = reward_grid_y[state_index]
         else:
             reward = 0
@@ -95,11 +95,13 @@ def run_MDP(policy,seed):
         #print("reward ", reward)
         G+=reward
 
-        trajectory.append((state,a,reward))
-        if np.abs(state[0]) == domain_size//2 or np.abs(state[1]) == domain_size//2:
+        trajectory.append((state, a, reward))
+
+        if np.abs(next_s[0]) == domain_size//2 or np.abs(next_s[1]) == domain_size//2:
             #print("terminate at ",state)
             break
 
+        state = next_s
 
     return trajectory,G
 

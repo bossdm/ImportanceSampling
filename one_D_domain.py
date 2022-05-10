@@ -61,17 +61,17 @@ def run_MDP(policy,seed):
         #print("state ", state)
         #print("action ", action)
 
-        state = next_state(state,action)
-        state_index = states.index(state)
+        next_s = next_state(state,action)
+        state_index = states.index(next_s)
         reward = reward_grid[state_index]
         #print("reward ", reward)
         G+=reward
 
         trajectory.append((state,a,reward))
-        if np.abs(state) == domain_size//2:
+        if np.abs(next_s) == domain_size//2:
             #print("terminate at ",state)
             break
-
+        state = next_s
 
     return trajectory,G
 

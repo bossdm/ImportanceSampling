@@ -2,7 +2,7 @@ import numpy as np
 
 
 def get_A_B_r(k,t,trajectory,p_e,p_b):
-    if t >= len(trajectory):  # TODO: what is done here?
+    if t >= len(trajectory) :  # do not include terminal state TODO: what is done here?
         return 1, 1, 0
     else:
         A=1
