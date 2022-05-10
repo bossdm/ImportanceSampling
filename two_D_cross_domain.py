@@ -20,21 +20,21 @@ def manhattan_dist(a,b):
 
 def next_state(state,action):
     if state[0] < 0 and state[0] >= -bound + 2: # lift should not be before reward
-        state = (state[0]-1,state[1])
+        next = (state[0]-1,state[1])
     elif state[0] > 0 and state[0] <= bound -2: # lift should not be before reward
-        state = (state[0]+1,state[1])
+        next = (state[0]+1,state[1])
     elif state[1] < 0 and state[1] >= -bound + 2: # lift should not be before reward
-        state = (state[0],state[1]-1)
+        next = (state[0],state[1]-1)
     elif state[1] > 0 and state[1] <= bound -2: # lift should not be before reward
-        state = (state[0],state[1]+1)
+        next = (state[0],state[1]+1)
     else:
         if state[0] != 0:
-            state=(state[0] + action[0], state[1])
+            next=(state[0] + action[0], state[1])
         elif state[1] != 0:
-            state = (state[0], state[1] + action[1])
+            next = (state[0], state[1] + action[1])
         else:
-            state = (state[0] + action[0], state[1] + action[1])
-    return state
+            next = (state[0] + action[0], state[1] + action[1])
+    return next
 def policies():
     """
     immediately go to the closest corner
@@ -42,10 +42,10 @@ def policies():
     """
     policy = {}
     behav_policy = {}
-    for i in range(-bound-1, +bound):    # no decision needed for terminal states
+    for i in range(-bound+1, +bound):    # no decision needed for terminal states
         policy[(i,0)] = [0,1,0,0]  # W, E, S, N --> go east
         behav_policy[(i,0)] = [0.25,0.25,0.25,0.25]
-    for j in range(-bound-1, +bound):    # no decision needed for terminal states
+    for j in range(-bound+1, +bound):    # no decision needed for terminal states
         policy[(0,j)] = [0,0,0,1]  # S, N, W, E --> go north
         behav_policy[(0,j)] = [0.25, 0.25, 0.25, 0.25]
 

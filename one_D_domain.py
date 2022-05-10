@@ -19,12 +19,12 @@ def manhattan_dist(a,b):
 
 def next_state(state,action):
     if state < 0 and state >= -bound + 2: # lift should not be before reward
-        state-=1
+        next=state-1
     elif state > 0 and state <= bound -2: # lift should not be before reward
-        state+=1
+        next=state+1
     else:
-        state+=action
-    return state
+        next=state+action
+    return next
 def optimal_policy():
     """
     immediately go to the closest corner
