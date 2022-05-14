@@ -72,12 +72,14 @@ def INCRIS(trajectories,p_e,p_b,H,weighted=False):
         print("best k", best_k)
     return G, best_ks
 
-def INCRIS_scores(trajectories,p_e,p_b,H,best_ks,weighted=False,period=float("inf")):
+def INCRIS_Gs(trajectories,p_e,p_b,H,best_ks,weighted=False,period=float("inf")):
     G_scores= []
     for num_traj in range(period,len(trajectories)+period,period):
+        G = 0
         for t in range(H):
             MSE, Br = get_MSE(best_ks[t], t, trajectories[0:num_traj], p_e, p_b)
-            G = np.mean(Br)
-            G_scores.append(G)
+            G_t = np.mean(Br)
+            G+=G_t
+        G_scores.append(G)
     print("INCRIS ",G_scores[-1])
-    return G, best_ks
+    return G_scores, best_ks
