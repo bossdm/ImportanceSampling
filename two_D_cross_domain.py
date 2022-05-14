@@ -68,7 +68,7 @@ def convergence():
     line4, = plt.plot(x, SIS_scores, marker="D")
     line5, = plt.plot(x, WSIS_scores, marker="X")
     line6, = plt.plot(x, INCRIS_score, marker="O")
-    plt.legend([line1, line2, line3, line4, line5], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
+    plt.legend([line1, line2, line3, line4, line5, line6], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
     plt.savefig("convergence.pdf")
 
 # Press the green button in the gutter to run the script.

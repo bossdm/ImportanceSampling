@@ -78,15 +78,39 @@ def convergence():
 def variance_test():
     actions = [-1, +1]
     MC_iterations = 20000
-    repetitions=2
-    sizes=[7,9,11,13,15]
-    IS_score_list=WIS_score_list=PDIS_score_list=SIS_score_list=WSIS_score_list=INCRIS_score_list=[[] for i in sizes]
-    for domain_size in sizes:  # [terminal, empty, lift(s), start, lift(s), empty, terminal] --> 1 or more lifts, horizon increasing
+    repetitions=3
+    sizes=[7,9]
+    IS_score_l=[[] for i in sizes]
+    WIS_score_l = [[] for i in sizes]
+    PDIS_score_l = [[] for i in sizes]
+    SIS_score_l = [[] for i in sizes]
+    WSIS_score_l = [[] for i in sizes]
+    INCRIS_score_l = [[] for i in sizes]
+    IS_score_u = [[] for i in sizes]
+    WIS_score_u = [[] for i in sizes]
+    PDIS_score_u = [[] for i in sizes]
+    SIS_score_u = [[] for i in sizes]
+    WSIS_score_u = [[] for i in sizes]
+    INCRIS_score_u = [[] for i in sizes]
+    IS_score_m = [[] for i in sizes]
+    WIS_score_m = [[] for i in sizes]
+    PDIS_score_m = [[] for i in sizes]
+    SIS_score_m = [[] for i in sizes]
+    WSIS_score_m = [[] for i in sizes]
+    INCRIS_score_m = [[] for i in sizes]
+    for idx, domain_size in enumerate(sizes):  # [terminal, empty, lift(s), start, lift(s), empty, terminal] --> 1 or more lifts, horizon increasing
+        print("doing domain size ",domain_size)
         reward_grid = [-1] + [0 for i in range(domain_size - 2)] + [+1]
         bound = domain_size // 2
         states = list(range(-bound, +bound + 1))
-        IS_scores=WIS_scores=SIS_scores=WSIS_scores=PDIS_scores=INCRIS_scores=[]
+        IS_scores=[]
+        SIS_scores=[]
+        WIS_scores = []
+        WSIS_scores = []
+        PDIS_scores = []
+        INCRIS_scores = []
         for run in range(repetitions):
+            print("doing run ", run)
             env = One_D_Domain(domain_size, reward_grid, bound, states, actions, MC_iterations, seed=run*MC_iterations)
             policy = env.optimal_policy()
             # behaviour policy
@@ -110,13 +134,13 @@ def variance_test():
             #WPDIS_score = WPDIS(trajectories, p_e=policy, p_b=behav, period=period)
 
             print("WIS")
-            WIS_scores.append(WIS(trajectories, p_e=policy, p_b=behav, period=period)[-1])
+            WIS_scores.append(WIS(trajectories, p_e=policy, p_b=behav)[-1])
 
             print("PDIS")
-            PDIS_scores.append(PDIS(trajectories, p_e=policy, p_b=behav, period=period)[-1])
+            PDIS_scores.append(PDIS(trajectories, p_e=policy, p_b=behav)[-1])
 
             print("IS")
-            IS_scores.append(IS(trajectories, p_e=policy, p_b=behav, period=period))
+            IS_scores.append(IS(trajectories, p_e=policy, p_b=behav)[-1])
 
             print("Exhaustive SIS")
             S_sets=env.candidate_statesets()
@@ -124,28 +148,60 @@ def variance_test():
             SIS_scores.append(best_G)
             best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
             WSIS_scores.append(best_G)
-        IS_score_list.append((np.mean(IS_scores),np.std(IS_scores)))
-        WIS_score_list.append((np.mean(WIS_scores), np.std(WIS_scores)))
-        PDIS_score_list.append((np.mean(PDIS_scores), np.std(PDIS_scores)))
-        INCRIS_score_list.append((np.mean(INCRIS_scores), np.std(INCRIS_scores)))
-        SIS_score_list.append((np.mean(SIS_scores), np.std(SIS_scores)))
-        WSIS_score_list.append((np.mean(WSIS_scores), np.std(WSIS_scores)))
+        # IS
+        m=np.mean(IS_scores)
+        s=np.std(IS_scores)/np.sqrt(len(IS_scores))
+        IS_score_l[idx]=m-s
+        IS_score_u[idx] = m + s
+        IS_score_m[idx] = m
+        # WIS
+        m=np.mean(WIS_scores)
+        s=np.std(WIS_scores)/np.sqrt(len(WIS_scores))
+        WIS_score_l[idx]=m-s
+        WIS_score_u[idx] = m + s
+        WIS_score_m[idx] = m
+        # PDIS
+        m=np.mean(PDIS_scores)
+        s=np.std(PDIS_scores)/np.sqrt(len(PDIS_scores))
+        PDIS_score_l[idx]=m-s
+        PDIS_score_u[idx] = m + s
+        PDIS_score_m[idx] = m
 
-    for i,_ in enumerate(IS_score_list):
-        mean,sd = IS_score_list[i]
-        line1, = plt.fill_between(x, mean-sd , mean+sd, marker="v")
-        mean, sd = WIS_score_list[i]
-        line2, = plt.fill_between(x, mean-sd , mean+sd, marker="o")
-        mean, sd = PDIS_score_list[i]
-        line3, = plt.fill_between(x, mean-sd , mean+sd, marker="x")
-        mean, sd =SIS_score_list[i]
-        line4, = plt.fill_between(x, mean-sd , mean+sd, marker="D")
-        mean, sd = WSIS_score_list[i]
-        line5, = plt.fill_between(x, mean-sd , mean+sd, marker="X")
-        mean, sd = INCRIS_score_list[i]
-        line6, = plt.fill_between(x, mean-sd , mean+sd, marker="^")
-        plt.legend([line1, line2, line3, line4, line5, line6], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
-        plt.savefig("convergence.pdf")
+        # SIS
+        m=np.mean(SIS_scores)
+        s=np.std(SIS_scores)/np.sqrt(len(SIS_scores))
+        SIS_score_l[idx]=m-s
+        SIS_score_u[idx] = m + s
+        SIS_score_m[idx] = m
+        # WSIS
+        m=np.mean(WSIS_scores)
+        s=np.std(WSIS_scores)/np.sqrt(len(WSIS_scores))
+        WSIS_score_l[idx]=m-s
+        WSIS_score_u[idx] = m + s
+        WSIS_score_m[idx] = m
+        # INCRIS
+        m=np.mean(INCRIS_scores)
+        s=np.std(INCRIS_scores)/np.sqrt(len(INCRIS_scores))
+        INCRIS_score_l[idx]=m-s
+        INCRIS_score_u[idx] = m + s
+        INCRIS_score_m[idx] = m
+
+
+
+    line1, = plt.plot(sizes,IS_score_m,marker="v")
+    b1 = plt.fill_between(sizes,  IS_score_l,  IS_score_u,alpha=0.25)
+    line2, = plt.plot(sizes, WIS_score_m,marker="o")
+    b2 = plt.fill_between(sizes,  WIS_score_l,  WIS_score_u,alpha=0.25)
+    line3, = plt.plot(sizes, PDIS_score_m,marker="x")
+    b3 = plt.fill_between(sizes,  PDIS_score_l,  PDIS_score_u,alpha=0.25)
+    line4, = plt.plot(sizes, SIS_score_m,marker="D")
+    b4 = plt.fill_between(sizes,  SIS_score_l,  SIS_score_u,alpha=0.25)
+    line5, = plt.plot(sizes, WSIS_score_m,marker="X")
+    b5 = plt.fill_between(sizes,  WSIS_score_l,  WSIS_score_u,alpha=0.25)
+    line6, = plt.plot(sizes, INCRIS_score_m,marker="^")
+    b6 = plt.fill_between(sizes,  INCRIS_score_l,  INCRIS_score_u,alpha=0.25)
+    plt.legend([line1, line2, line3, line4, line5, line6], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
+    plt.savefig("variance_test.pdf")
 
 
 
