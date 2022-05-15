@@ -13,7 +13,7 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     """
     writefile=open("SIS_log.txt","w")
     writefile.write("S^A \t G \t V \t C \t hatA\n")
-    epsilon=0.001
+    epsilon=0.05
     best_setsize=-1
     best_MSE = float("inf")
     for Ss in S_sets:
@@ -67,8 +67,7 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
         # if C[0,1] >= 0.5*V:  # don't consider these
         #     continue
 
-        if MSE < best_MSE + epsilon:
-            if len(Ss) > best_setsize:
+        if MSE < best_MSE or MSE < best_MSE*(1+epsilon) and len(Ss) > best_setsize:
                 best_setsize=len(Ss)
                 best_MSE = MSE
                 best_s_set = Ss

@@ -77,8 +77,8 @@ def convergence():
 
 def variance_test():
     actions = [-1, +1]
-    MC_iterations = 20000
-    repetitions=3
+    MC_iterations = 10000
+    repetitions=2
     sizes=[7,9]
     IS_score_l=[[] for i in sizes]
     WIS_score_l = [[] for i in sizes]
@@ -100,8 +100,8 @@ def variance_test():
     INCRIS_score_m = [[] for i in sizes]
     for idx, domain_size in enumerate(sizes):  # [terminal, empty, lift(s), start, lift(s), empty, terminal] --> 1 or more lifts, horizon increasing
         print("doing domain size ",domain_size)
-        reward_grid = [-1] + [0 for i in range(domain_size - 2)] + [+1]
         bound = domain_size // 2
+        reward_grid = [-bound] + [-1.0 for i in range(domain_size - 2)] + [+bound]  # penalise length of the path
         states = list(range(-bound, +bound + 1))
         IS_scores=[]
         SIS_scores=[]
@@ -116,6 +116,7 @@ def variance_test():
             # behaviour policy
             behav = [[0.50, 0.50] for i in range(domain_size)]
             _, eval_score = env.monte_carlo_eval(policy)
+            print("true score ", eval_score)
             trajectories, behav_score = env.monte_carlo_eval(behav)
 
             period = 5000
@@ -203,7 +204,23 @@ def variance_test():
     plt.legend([line1, line2, line3, line4, line5, line6], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
     plt.savefig("variance_test.pdf")
 
+    # table
+    writefile=open("variance_test.txt","w")
+    writefile.write("IS & WIS & PDIS & SIS & WSIS & INCRIS \\ \n")
+    for idx, size in enumerate(sizes):
+        se1 = IS_score_m[idx] - IS_score_l[idx]
+        se2 = WIS_score_m[idx] - IS_score_l[idx]
+        se3 = PDIS_score_m[idx] - IS_score_l[idx]
+        se4 = SIS_score_m[idx] - IS_score_l[idx]
+        se5=WSIS_score_m[idx] - IS_score_l[idx]
+        se6 = INCRIS_score_m[idx] - IS_score_l[idx]
 
+        writefile.write(str(IS_score_m[idx]) + "\pm" + str(se1) +" &" +\
+                        str(WIS_score_m[idx]) + "\pm" +  str(se2) +\
+                        str(PDIS_score_m[idx]) + "\pm" + str(se3) + " &"+\
+                        str(SIS_score_m[idx]) + "\pm" + str(se4) +" &"+\
+                        str(WSIS_score_m[idx]) + "\pm" + str(se5) +" &"+\
+                        str(INCRIS_score_m[idx]) + "\pm" + str(se6) +" \\ \n")
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
