@@ -78,7 +78,7 @@ def convergence():
 def variance_test():
     actions = [-1, +1]
     MC_iterations = 10000
-    repetitions=4
+    repetitions=25
     sizes=[7,9,11,13,15,17]
     IS_score_l=[[] for i in sizes]
     WIS_score_l = [[] for i in sizes]
@@ -134,8 +134,8 @@ def variance_test():
             #print("WPDIS")
             #WPDIS_score = WPDIS(trajectories, p_e=policy, p_b=behav, period=period)
 
-            print("WIS")
-            WIS_scores.append(WIS(trajectories, p_e=policy, p_b=behav)[-1])
+            #print("WIS")
+            #WIS_scores.append(WIS(trajectories, p_e=policy, p_b=behav)[-1])
 
             print("PDIS")
             PDIS_scores.append(PDIS(trajectories, p_e=policy, p_b=behav)[-1])
@@ -151,8 +151,8 @@ def variance_test():
             print(SIS_scores[-1])
 
             #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
-            WSIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)[0])
-            print(WSIS_scores[-1])
+            #WSIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)[0])
+            #print(WSIS_scores[-1])
 
         # IS
         m=np.mean(IS_scores)
@@ -161,11 +161,11 @@ def variance_test():
         IS_score_u[idx] = m + s
         IS_score_m[idx] = m
         # WIS
-        m=np.mean(WIS_scores)
-        s=np.std(WIS_scores)/np.sqrt(len(WIS_scores))
-        WIS_score_l[idx]=m-s
-        WIS_score_u[idx] = m + s
-        WIS_score_m[idx] = m
+        #m=np.mean(WIS_scores)
+        #s=np.std(WIS_scores)/np.sqrt(len(WIS_scores))
+        #WIS_score_l[idx]=m-s
+        #WIS_score_u[idx] = m + s
+        #WIS_score_m[idx] = m
         # PDIS
         m=np.mean(PDIS_scores)
         s=np.std(PDIS_scores)/np.sqrt(len(PDIS_scores))
@@ -180,11 +180,11 @@ def variance_test():
         SIS_score_u[idx] = m + s
         SIS_score_m[idx] = m
         # WSIS
-        m=np.mean(WSIS_scores)
-        s=np.std(WSIS_scores)/np.sqrt(len(WSIS_scores))
-        WSIS_score_l[idx]=m-s
-        WSIS_score_u[idx] = m + s
-        WSIS_score_m[idx] = m
+        #m=np.mean(WSIS_scores)
+        #s=np.std(WSIS_scores)/np.sqrt(len(WSIS_scores))
+        #WSIS_score_l[idx]=m-s
+        #WSIS_score_u[idx] = m + s
+        #WSIS_score_m[idx] = m
         # INCRIS
         m=np.mean(INCRIS_scores)
         s=np.std(INCRIS_scores)/np.sqrt(len(INCRIS_scores))
@@ -196,36 +196,36 @@ def variance_test():
 
     line1, = plt.plot(sizes,IS_score_m,marker="v")
     b1 = plt.fill_between(sizes,  IS_score_l,  IS_score_u,alpha=0.25)
-    line2, = plt.plot(sizes, WIS_score_m,marker="o")
-    b2 = plt.fill_between(sizes,  WIS_score_l,  WIS_score_u,alpha=0.25)
+    #line2, = plt.plot(sizes, WIS_score_m,marker="o")
+    #b2 = plt.fill_between(sizes,  WIS_score_l,  WIS_score_u,alpha=0.25)
     line3, = plt.plot(sizes, PDIS_score_m,marker="x")
     b3 = plt.fill_between(sizes,  PDIS_score_l,  PDIS_score_u,alpha=0.25)
     line4, = plt.plot(sizes, SIS_score_m,marker="D")
     b4 = plt.fill_between(sizes,  SIS_score_l,  SIS_score_u,alpha=0.25)
-    line5, = plt.plot(sizes, WSIS_score_m,marker="X")
-    b5 = plt.fill_between(sizes,  WSIS_score_l,  WSIS_score_u,alpha=0.25)
+    #line5, = plt.plot(sizes, WSIS_score_m,marker="X")
+    #b5 = plt.fill_between(sizes,  WSIS_score_l,  WSIS_score_u,alpha=0.25)
     line6, = plt.plot(sizes, INCRIS_score_m,marker="^")
     b6 = plt.fill_between(sizes,  INCRIS_score_l,  INCRIS_score_u,alpha=0.25)
-    plt.legend([line1, line2, line3, line4, line5, line6], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
+    plt.legend([line1, line3, line4,line6], ["IS", "PDIS", "SIS", "INCRIS"])
     plt.savefig("variance_test.pdf")
 
     # table
-    writefile=open("variance_test.txt","w")
-    writefile.write("IS & WIS & PDIS & SIS & WSIS & INCRIS \\ \n")
-    for idx, size in enumerate(sizes):
-        se1 = IS_score_m[idx] - IS_score_l[idx]
-        se2 = WIS_score_m[idx] - IS_score_l[idx]
-        se3 = PDIS_score_m[idx] - IS_score_l[idx]
-        se4 = SIS_score_m[idx] - IS_score_l[idx]
-        se5=WSIS_score_m[idx] - IS_score_l[idx]
-        se6 = INCRIS_score_m[idx] - IS_score_l[idx]
-
-        writefile.write(str(IS_score_m[idx]) + "\pm" + str(se1) +" &" +\
-                        str(WIS_score_m[idx]) + "\pm" +  str(se2) +\
-                        str(PDIS_score_m[idx]) + "\pm" + str(se3) + " &"+\
-                        str(SIS_score_m[idx]) + "\pm" + str(se4) +" &"+\
-                        str(WSIS_score_m[idx]) + "\pm" + str(se5) +" &"+\
-                        str(INCRIS_score_m[idx]) + "\pm" + str(se6) +" \\ \n")
+    # writefile=open("variance_test.txt","w")
+    # writefile.write("IS & WIS & PDIS & SIS & WSIS & INCRIS \\ \n")
+    # for idx, size in enumerate(sizes):
+    #     se1 = IS_score_m[idx] - IS_score_l[idx]
+    #     se2 = WIS_score_m[idx] - IS_score_l[idx]
+    #     se3 = PDIS_score_m[idx] - IS_score_l[idx]
+    #     se4 = SIS_score_m[idx] - IS_score_l[idx]
+    #     se5=WSIS_score_m[idx] - IS_score_l[idx]
+    #     se6 = INCRIS_score_m[idx] - IS_score_l[idx]
+    #
+    #     writefile.write(str(IS_score_m[idx]) + "\pm" + str(se1) +" &" +\
+    #                     str(WIS_score_m[idx]) + "\pm" +  str(se2) +\
+    #                     str(PDIS_score_m[idx]) + "\pm" + str(se3) + " &"+\
+    #                     str(SIS_score_m[idx]) + "\pm" + str(se4) +" &"+\
+    #                     str(WSIS_score_m[idx]) + "\pm" + str(se5) +" &"+\
+    #                     str(INCRIS_score_m[idx]) + "\pm" + str(se6) +" \\ \n")
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
