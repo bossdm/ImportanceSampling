@@ -64,7 +64,7 @@ class One_D_Domain(object):
             G += reward
 
             trajectory.append((state, a, reward))
-            if np.abs(next_s) == self.domain_size // 2:
+            if np.abs(next_s) == self.bound:
                 # print("terminate at ",state)
                 break
             state = next_s

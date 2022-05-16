@@ -84,14 +84,15 @@ class Two_D_Cross_Domain(object):
                 state_index = next_s[1] + self.bound
                 reward = self.reward_grid_y[state_index]
             else:
-                reward = 0
-
+                state_index = self.bound
+                reward = self.reward_grid_x[state_index] # default reward, but both should be the same
+            #print(next_s , reward)
             #print("reward ", reward)
             G+=reward
 
             trajectory.append((state, a, reward))
 
-            if np.abs(next_s[0]) == self.domain_size//2 or np.abs(next_s[1]) == self.domain_size//2:
+            if np.abs(next_s[0]) == self.bound or np.abs(next_s[1]) == self.bound:
                 #print("terminate at ",state)
                 break
 
