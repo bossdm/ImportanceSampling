@@ -58,10 +58,10 @@ def INCRIS(trajectories,p_e,p_b,H,weighted=False):
 
     G = 0
     best_ks=[]
-    for t in range(1,H+1):
+    for t in range(0,H+1):
         best_MSE = float("inf")
         best_k = None
-        for k in range(1,t+1): # loop over possible k
+        for k in range(0,t+1): # loop over possible k
             MSE, Br = get_MSE(k, t, trajectories,p_e,p_b)
             if MSE < best_MSE:
                 best_k = k

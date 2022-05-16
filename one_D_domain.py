@@ -78,8 +78,8 @@ def convergence():
 def variance_test():
     actions = [-1, +1]
     MC_iterations = 10000
-    repetitions=2
-    sizes=[7,9]
+    repetitions=4
+    sizes=[7,9,11,13,15,17]
     IS_score_l=[[] for i in sizes]
     WIS_score_l = [[] for i in sizes]
     PDIS_score_l = [[] for i in sizes]
@@ -144,11 +144,16 @@ def variance_test():
             IS_scores.append(IS(trajectories, p_e=policy, p_b=behav)[-1])
 
             print("Exhaustive SIS")
-            S_sets=env.candidate_statesets()
-            best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
-            SIS_scores.append(best_G)
-            best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
-            WSIS_scores.append(best_G)
+            #S_sets=env.candidate_statesets()
+            best_s_set=[-1,1]
+            #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
+            SIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False, period=period)[0])
+            print(SIS_scores[-1])
+
+            #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
+            WSIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)[0])
+            print(WSIS_scores[-1])
+
         # IS
         m=np.mean(IS_scores)
         s=np.std(IS_scores)/np.sqrt(len(IS_scores))
