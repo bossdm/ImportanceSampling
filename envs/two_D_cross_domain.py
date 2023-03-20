@@ -103,3 +103,10 @@ class Two_D_Cross_Domain(object):
         return list(itertools.combinations(policy.keys(), 0)) + list(itertools.combinations(policy.keys(), 1)) + \
         list(itertools.combinations(policy.keys(), 2)) + list(itertools.combinations(policy.keys(), 3)) + \
         list(itertools.combinations(policy.keys(), 4))
+
+    def lift_stateset(self):
+        l=[]
+        for i in range(-self.bound,self.bound+1,+1):
+            if i < 0 and i -self.bound + 2 or i > 0 and i <= self.bound - 2:
+                l.append(i)
+        return i

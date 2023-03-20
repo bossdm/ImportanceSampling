@@ -69,7 +69,7 @@ def INCRIS(trajectories,p_e,p_b,H,weighted=False):
                 r_t = np.mean(Br)
         G+=r_t
         best_ks.append(best_k)
-        print("best k", best_k)
+        #print("best k", best_k)
     return G, best_ks
 
 def INCRIS_Gs(trajectories,p_e,p_b,H,best_ks,weighted=False,period=float("inf")):

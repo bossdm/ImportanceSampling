@@ -7,92 +7,97 @@ import itertools
 from envs.two_D_cross_domain import *
 
 
-
-def convergence():
-    domain_size = 9
-    reward_grid_x = [-1] + [0 for i in range(domain_size - 2)] + [+1]
-    reward_grid_y = reward_grid_x
-    bound = domain_size // 2
-    actions = [(-1, 0), (1, 0), (0, -1), (0, +1)]  # W,E,S,N
-    MC_iterations = 100000
-    env = Two_D_Cross_Domain(domain_size,reward_grid_x,reward_grid_y,bound,actions,MC_iterations,seed=10*MC_iterations)
-    policy, behav = env.policies()
-    S_sets = env.candidate_statesets(policy)
-
-    trajectories, behav_score = env.monte_carlo_eval(behav)
-    _, eval_score = env.monte_carlo_eval(policy)
-    print("eval policy ", eval_score)
-    print("behav policy ", behav_score)
-
-    # data = trajectories,behav_score,eval_score
-    # pickle.dump(data,open("data.pkl","wb"))
-    # trajectories, behav_score, eval_score = pickle.load(open("data.pkl","rb")
-    period = 5000
-    num_plotpoints = MC_iterations // period
-    x = [i * period for i in range(num_plotpoints + 1)]
-
-    # note: this is intuitive but does not reflect how the algorithm would work for smaller number of trajectories; alternative is to recompute for each subset of
-    # trajectories until then
-    H = max([len(traj) for traj in trajectories])
-    best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=False)
-    print("INCRIS", best_G)
-    INCRIS_score = INCRIS_Gs(trajectories, p_e=policy, p_b=behav, H=H, best_ks=best_ks, weighted=False,
-                                 period=period)
-    print("INCRIS")
-
-    print("WPDIS")
-    WPDIS_scores = WPDIS(trajectories, p_e=policy, p_b=behav, period=period)
-
-    print("WIS")
-    WIS_scores = WIS(trajectories, p_e=policy, p_b=behav, period=period)
-
-    print("PDIS")
-    PDIS_scores = PDIS(trajectories, p_e=policy, p_b=behav, period=period)
-
-    print("IS")
-    IS_scores = IS(trajectories, p_e=policy, p_b=behav, period=period)
-
-    print("Exhaustive SIS")
-    # SA_sets=[[]] + [[(s,a)] for s,a in lifts_int.items()] + [[(s,a) for s,a in lifts_int.items()]] + [[(s,a)] for s in states for a,act in enumerate(actions)]
-    best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
-    SIS_scores = SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False, period=period)
-
-    best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
-    WSIS_scores = SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)
-    #
-
-    # Exhaustive_SPDIS(trajectories, SA_sets, p_e=policy, p_b=behav)
-    line1, = plt.plot(x, IS_scores, marker="v")
-    line2, = plt.plot(x, WIS_scores, marker="o")
-    line3, = plt.plot(x, PDIS_scores, marker="x")
-    line4, = plt.plot(x, SIS_scores, marker="D")
-    line5, = plt.plot(x, WSIS_scores, marker="X")
-    line6, = plt.plot(x, INCRIS_score, marker="O")
-    plt.legend([line1, line2, line3, line4, line5, line6], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
-    plt.savefig("convergence.pdf")
+#
+# def convergence():
+#     domain_size = 7
+#
+#     bound = domain_size // 2
+#     reward_grid_x = [-bound] + [0 for i in range(domain_size - 2)] + [+bound]
+#     reward_grid_y = reward_grid_x
+#     actions = [(-1, 0), (1, 0), (0, -1), (0, +1)]  # W,E,S,N
+#     MC_iterations = 10000
+#     env = Two_D_Cross_Domain(domain_size,reward_grid_x,reward_grid_y,bound,actions,MC_iterations,seed=10*MC_iterations)
+#     policy, behav = env.policies()
+#
+#
+#     trajectories, behav_score = env.monte_carlo_eval(behav)
+#     _, eval_score = env.monte_carlo_eval(policy)
+#     print("eval policy ", eval_score)
+#     print("behav policy ", behav_score)
+#
+#     # data = trajectories,behav_score,eval_score
+#     # pickle.dump(data,open("data.pkl","wb"))
+#     # trajectories, behav_score, eval_score = pickle.load(open("data.pkl","rb")
+#     period = 5000
+#     num_plotpoints = MC_iterations // period
+#     x = [i * period for i in range(num_plotpoints + 1)]
+#
+#     # note: this is intuitive but does not reflect how the algorithm would work for smaller number of trajectories; alternative is to recompute for each subset of
+#     # trajectories until then
+#     H = max([len(traj) for traj in trajectories])
+#     best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=False)
+#     print("INCRIS", best_G)
+#     INCRIS_score = INCRIS_Gs(trajectories, p_e=policy, p_b=behav, H=H, best_ks=best_ks, weighted=False,
+#                                  period=period)
+#     print("INCRIS")
+#
+#     print("WPDIS")
+#     WPDIS_scores = WPDIS(trajectories, p_e=policy, p_b=behav, period=period)
+#
+#     print("WIS")
+#     WIS_scores = WIS(trajectories, p_e=policy, p_b=behav, period=period)
+#
+#     print("PDIS")
+#     PDIS_scores = PDIS(trajectories, p_e=policy, p_b=behav, period=period)
+#
+#     print("IS")
+#     IS_scores = IS(trajectories, p_e=policy, p_b=behav, period=period)
+#
+#     print("Exhaustive SIS")
+#     # SA_sets=[[]] + [[(s,a)] for s,a in lifts_int.items()] + [[(s,a) for s,a in lifts_int.items()]] + [[(s,a)] for s in states for a,act in enumerate(actions)]
+#     S_sets = env.candidate_statesets(policy)
+#     best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
+#     SIS_scores = SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False, period=period)
+#
+#     best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
+#     WSIS_scores = SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)
+#     #
+#
+#     # Exhaustive_SPDIS(trajectories, SA_sets, p_e=policy, p_b=behav)
+#     line1, = plt.plot(x, IS_scores, marker="v")
+#     line2, = plt.plot(x, WIS_scores, marker="o")
+#     line3, = plt.plot(x, PDIS_scores, marker="x")
+#     line4, = plt.plot(x, SIS_scores, marker="D")
+#     line5, = plt.plot(x, WSIS_scores, marker="X")
+#     line6, = plt.plot(x, INCRIS_score, marker="O")
+#     plt.legend([line1, line2, line3, line4, line5, line6], ["IS", "WIS", "PDIS", "SIS", "WSIS", "INCRIS"])
+#     plt.savefig("convergence_2D.pdf")
 
 
 def variance_test():
     actions = [(-1,0), (+1,0), (0,-1),(0,+1)]
     MC_iterations = 10000
-    repetitions=4
-    sizes=[7,9]
-    IS_score_l=[[] for i in sizes]
+    repetitions = 25
+    sizes = [7, 9, 11, 13, 15, 17]
+    IS_score_l = [[] for i in sizes]
     WIS_score_l = [[] for i in sizes]
     PDIS_score_l = [[] for i in sizes]
     SIS_score_l = [[] for i in sizes]
+    SIS_score_search_l = [[] for i in sizes]
     WSIS_score_l = [[] for i in sizes]
     INCRIS_score_l = [[] for i in sizes]
     IS_score_u = [[] for i in sizes]
     WIS_score_u = [[] for i in sizes]
     PDIS_score_u = [[] for i in sizes]
     SIS_score_u = [[] for i in sizes]
+    SIS_score_search_u = [[] for i in sizes]
     WSIS_score_u = [[] for i in sizes]
     INCRIS_score_u = [[] for i in sizes]
     IS_score_m = [[] for i in sizes]
     WIS_score_m = [[] for i in sizes]
     PDIS_score_m = [[] for i in sizes]
     SIS_score_m = [[] for i in sizes]
+    SIS_score_search_m = [[] for i in sizes]
     WSIS_score_m = [[] for i in sizes]
     INCRIS_score_m = [[] for i in sizes]
     for idx, domain_size in enumerate(sizes):  # [terminal, empty, lift(s), start, lift(s), empty, terminal] --> 1 or more lifts, horizon increasing
@@ -101,6 +106,7 @@ def variance_test():
         reward_grid = [-bound] + [-1.0 for i in range(domain_size - 2)] + [+bound]  # penalise length of the path
         IS_scores=[]
         SIS_scores=[]
+        SIS_scores_search = []
         WIS_scores = []
         WSIS_scores = []
         PDIS_scores = []
@@ -138,12 +144,14 @@ def variance_test():
             IS_scores.append(IS(trajectories, p_e=policy, p_b=behav)[-1])
 
             print("Exhaustive SIS")
-            #S_sets=env.candidate_statesets()
-            best_s_set=[-1,1]
-            #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
+            best_s_set=[[-1,0],[1,0],[0,-1],[0,1]]
             SIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False, period=period)[0])
             print(SIS_scores[-1])
 
+            S_sets = env.candidate_statesets()
+            best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
+            SIS_scores_search.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False, period=period)[0])
+            print(SIS_scores_search[-1])
             #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
             #WSIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)[0])
             #print(WSIS_scores[-1])
@@ -186,21 +194,25 @@ def variance_test():
         INCRIS_score_u[idx] = m + s
         INCRIS_score_m[idx] = m
 
+    line1, = plt.plot(sizes, IS_score_m, marker="v")
+    b1 = plt.fill_between(sizes, IS_score_l, IS_score_u, alpha=0.25)
+    # line2, = plt.plot(sizes, WIS_score_m,marker="o")
+    # b2 = plt.fill_between(sizes,  WIS_score_l,  WIS_score_u,alpha=0.25)
+    line3, = plt.plot(sizes, PDIS_score_m, marker="x")
+    b3 = plt.fill_between(sizes, PDIS_score_l, PDIS_score_u, alpha=0.25)
+    line4, = plt.plot(sizes, SIS_score_m, marker="D")
+    b4 = plt.fill_between(sizes, SIS_score_l, SIS_score_u, alpha=0.25)
 
-
-    line1, = plt.plot(sizes,IS_score_m,marker="v")
-    b1 = plt.fill_between(sizes,  IS_score_l,  IS_score_u,alpha=0.25)
-    #line2, = plt.plot(sizes, WIS_score_m,marker="o")
-    #b2 = plt.fill_between(sizes,  WIS_score_l,  WIS_score_u,alpha=0.25)
-    line3, = plt.plot(sizes, PDIS_score_m,marker="x")
-    b3 = plt.fill_between(sizes,  PDIS_score_l,  PDIS_score_u,alpha=0.25)
-    line4, = plt.plot(sizes, SIS_score_m,marker="D")
-    b4 = plt.fill_between(sizes,  SIS_score_l,  SIS_score_u,alpha=0.25)
-    #line5, = plt.plot(sizes, WSIS_score_m,marker="X")
-    #b5 = plt.fill_between(sizes,  WSIS_score_l,  WSIS_score_u,alpha=0.25)
-    line6, = plt.plot(sizes, INCRIS_score_m,marker="^")
-    b6 = plt.fill_between(sizes,  INCRIS_score_l,  INCRIS_score_u,alpha=0.25)
-    plt.legend([line1, line3, line4,line6], ["IS", "PDIS", "SIS", "INCRIS"])
+    line8, = plt.plot(sizes, SIS_score_search_m, marker="D")
+    b8 = plt.fill_between(sizes, SIS_score_search_l, SIS_score_search_u, alpha=0.25)
+    # line5, = plt.plot(sizes, WSIS_score_m,marker="X")
+    # b5 = plt.fill_between(sizes,  WSIS_score_l,  WSIS_score_u,alpha=0.25)
+    line6, = plt.plot(sizes, INCRIS_score_m, marker="^")
+    b6 = plt.fill_between(sizes, INCRIS_score_l, INCRIS_score_u, alpha=0.25)
+    line7, = plt.plot(sizes, np.zeros((len(sizes))) + 1, linestyle="--")
+    plt.legend([line1, line3, line4, line8, line6, line7],
+               [r"$\hat{G}_{IS}$", r"$\hat{G}_{PDIS}$", r"$\hat{G}_{SIS}$ (Lift-states)",
+                r"$\hat{G}_{SIS}$ (Search-based)", "$\hat{G}_{INCRIS}$", r"$G$"])
     plt.savefig("variance_test_2D.pdf")
 
     # table
