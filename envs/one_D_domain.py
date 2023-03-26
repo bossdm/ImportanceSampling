@@ -53,15 +53,17 @@ class One_D_Domain(object):
     def monte_carlo_eval(self,policy,seed,MC_iterations):
         G = 0
         trajectories = []
+        terminals = []
         self.seed = seed
         self.MC_iterations=MC_iterations
         for k in range(self.MC_iterations):
             if k % 10000 == 0:
                 print("iteration ", k, "/", self.MC_iterations)
-            trajectory, G_ = self.run_MDP(policy, seed=k+self.seed)
+            trajectory, G_, terminal = self.run_MDP(policy, seed=k+self.seed)
             G += G_
             trajectories.append(trajectory)
-        return trajectories, G / self.MC_iterations
+            terminals.append(terminal)
+        return trajectories, G / self.MC_iterations, terminals
 
     def run_MDP(self,policy, seed):
         """
@@ -89,11 +91,12 @@ class One_D_Domain(object):
 
             trajectory.append((state, a, reward))
             if np.abs(next_s) == self.bound:
+                terminal = next_s
                 #print("terminate at ",next_s, " reward ", self.reward_grid[state_index])
                 break
             state = next_s
 
-        return trajectory, G
+        return trajectory, G, terminal
     def candidate_statesets(self):
         nonterminal_states=self.states[1:-1]
         return list(itertools.combinations(nonterminal_states, 0)) + list(itertools.combinations(nonterminal_states, 1)) + \

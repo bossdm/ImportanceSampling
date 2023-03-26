@@ -21,8 +21,8 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
         G, MSE, hatA, C, V = get_MSE(As, Br, weighted)
         writefile.write(str(Ss) + "\t" + str(G) + "\t" + str(V) + "\t" + str(C[0, 1]) + "\t" + str(hatA) + "\n")
         # writefile.write(str(Ss) + "\t" + str(G) + "\t" + str(V) + "\t" + str(C[0,1]) + "\t" + str(hatA) + "\n")
-        if hatA > (1 + epsilon) or hatA < (1 - epsilon):  # don't consider these
-            continue
+        # if hatA > (1 + epsilon) or hatA < (1 - epsilon):  # don't consider these
+        #     continue
         if C[0, 1] >= epsilon:  # don't consider these
             continue
         #     continue
@@ -36,6 +36,56 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     print("best_state_set",best_s_set)
     return best_G, best_s_set
 
+def get_Q_negligible_states(epsilon,state_space,action_space,Q):
+    Q_neg_states=[]
+    for s in range(len(state_space)):
+        is_negligible=True
+        Q_vals = [Q[s,a] for a in range(len(action_space))]
+        for i in range(1,len(action_space)):
+            for j in range(i):   #check all pairs
+                if np.abs(Q_vals[i] - Q_vals[j]) >= epsilon:
+                    is_negligible=False
+                    break
+            if is_negligible:
+                break
+        if is_negligible:
+            Q_neg_states.append(state_space[s])
+
+    return Q_neg_states
+
+def Qvalue_SIS(H,r_max,gamma,epsilon,alpha,trajectories,terminals,state_space,action_space,p_e,p_b,weighted=False):
+    """
+    search for epsilon-negligibility based on Q-values
+    :return:
+    """
+    Q=np.zeros((len(state_space),len(action_space))) + r_max*H/4
+    for t,trajectory in enumerate(trajectories):
+        print("ep ",t)
+        for i in range(len(trajectory) - 1):
+            print("step ", i)
+            step = trajectory[i]
+            next_step = trajectory[i+1]
+            if p_e is None and p_b is None:
+                (s,a,r,ro) = step
+                (s_next,_a,_r,_ro) = next_step
+            else:
+                (s, a, r) = step
+                (s_next, _a, _r) = next_step
+            Q[s,a] = (1.0-alpha)*Q[s,a] + alpha*(r+ gamma*max(Q[s_next,:]))
+        # now the last step
+        step = trajectory[-1]
+        if p_e is None and p_b is None:
+            (s,a,r,ro) = step
+        else:
+            (s, a, r) = step
+        s_next = terminals[t]
+        Q[s, a] = (1.0 - alpha) * Q[s, a] + alpha * (r + gamma * max(Q[s_next, :]))
+
+    print(Q)
+    S_A =  get_Q_negligible_states(epsilon,state_space,action_space,Q)
+    print("state set ",S_A)
+    scores = SIS(trajectories,S_A,p_e,p_b,weighted)
+    return scores, S_A
 
 def SIS(trajectories,Ss,p_e,p_b,weighted=False,period=float("inf")):
     """

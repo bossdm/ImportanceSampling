@@ -58,3 +58,4 @@ def get_MSE(As,Br,weighted):
         G = np.mean(Br)
     hatA = np.mean(As)
     return G, MSE, hatA, C, V
+
