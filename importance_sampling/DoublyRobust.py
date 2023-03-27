@@ -1,7 +1,7 @@
 
 import numpy as np
 
-def get_DR_params(trajectories,terminals, H,weighted,p_e,p_b):
+def get_DR_params(trajectories,H,weighted,p_e,p_b):
     n = len(trajectories)
     w=np.zeros((H,n))
     ro_product = np.zeros((H,n))
@@ -31,10 +31,11 @@ def get_DR_params(trajectories,terminals, H,weighted,p_e,p_b):
                 w[t,:] = ro_product[t,i] / n
     return w, r_min, r_max
 
-def get_DR_model(states, actions, trajectories, p_e,p_b,terminals, rmin):
-    numTerminals = len(np.unique(terminals))
-    numStates=len(states) - numTerminals
-    numNextStates = len(states)
+def get_DR_model(states, actions, trajectories, p_e,p_b,rmin):
+    """
+    """
+    numStates=len(states)
+    numNextStates =len(states) + 1  # treat both terminals as 1 state
     numActions=len(actions)
     stateActionCounts=np.zeros((numStates,numActions))
     stateActionCounts_includingHorizon=np.zeros((numStates,numActions))
@@ -42,7 +43,7 @@ def get_DR_model(states, actions, trajectories, p_e,p_b,terminals, rmin):
     stateActionStateCounts_includingHorizon=np.zeros((numStates,numActions,numNextStates))
     P=np.zeros((numStates,numActions,numNextStates))
     R=np.zeros((numStates,numActions,numNextStates))
-    d0=np.zeros((numStates,numActions,numNextStates)) # starting distribution
+    d0=np.zeros(numStates) # starting distribution
     n=len(trajectories)
     # compute counts, cumulative reward, and initial distribution
     for i, traj in enumerate(trajectories):
@@ -50,13 +51,13 @@ def get_DR_model(states, actions, trajectories, p_e,p_b,terminals, rmin):
             if p_e is None and p_b is None:
                 (s, a, r, ro) = step
                 if j == len(traj) - 1:
-                    s_next = terminals[i]
+                    s_next = numStates # single terminal state
                 else:
                     (s_next, _a, _r, _ro) = traj[j+1]
             else:
                 (s, a, r) = step
                 if j == len(traj) - 1:
-                    s_next = terminals[i]
+                    s_next = numStates # single terminal state
                 else:
                     (s_next, _a, _r) = traj[j+1]
             if j == 0:
@@ -70,26 +71,25 @@ def get_DR_model(states, actions, trajectories, p_e,p_b,terminals, rmin):
     # Compute P and normalise R
     for s in range(numStates):
         for a in range(numActions):
-            for s_next in range(numStates):
+            for s_next in range(numNextStates):
                 if stateActionCounts[s,a] == 0:
                     P[s,a,s_next] = 1 if s_next == s else 0# use self transition
                 else:
                     P[s,a,s_next] = stateActionStateCounts[s,a,s_next] / stateActionCounts[s][a]
 
-            if stateActionStateCounts_includingHorizon[s,a,s_next] == 0:
-                R[s,a,s_next] = rmin
-            else:
-                R[s,a,s_next] /= stateActionStateCounts_includingHorizon[s,a,s_next]
+                if stateActionStateCounts_includingHorizon[s,a,s_next] == 0:
+                    R[s,a,s_next] = 0  # not using Jiang rmin style
+                else:
+                    R[s,a,s_next] /= stateActionStateCounts_includingHorizon[s,a,s_next]
     print("model computed ")
-    print(d0)
-    print(P)
-    print(R)
+    #print("d0",d0)
+    #print("P",P)
+    #print("R",R)
     return d0, P, R
 
-def get_DR_hatq_hatv(d0, P, R, gamma, states,actions,terminals,H,p_e):
-    numTerminals = len(np.unique(terminals))
-    numStates = len(states) - numTerminals
-    numNextStates = len(states)
+def get_DR_hatq_hatv(d0, P, R, gamma, states,actions,H,p_e):
+    numStates = len(states)
+    numNextStates = numStates + 1
     numActions = len(actions)
 
     if p_e is None:
@@ -103,7 +103,7 @@ def get_DR_hatq_hatv(d0, P, R, gamma, states,actions,terminals,H,p_e):
             for a in range(numActions):
                 for s_next in range(numNextStates):
                     Q[t,s,a] += P[s,a,s_next] * R[s,a,s_next]  # current average reward
-                    if s_next not in terminals and t != H - 1:   # add next average Q value
+                    if s_next != numStates and t != H - 1:   # add next average Q value
                         Q[t,s, a]+= gamma * P[s,a,s_next] * pi_e[s_next,:].dot(Q[t+1,s_next,:])  # gamma is different from MAGIC code here
 
 
@@ -119,17 +119,17 @@ def get_DR_hatq_hatv(d0, P, R, gamma, states,actions,terminals,H,p_e):
         G+=d0[s]*V[0,s]
 
     # finished computing
-    print("values computed ")
-    print(Q)
-    print(V)
-    print(G)
+    #print("values computed ")
+    #print("Q",Q)
+    #print("V",V)
+    print("DR ",G)
     return Q, V, G
 
-def DoublyRobust(trajectories, H, states, actions, terminals, weighted, gamma, p_e, p_b):
+def DoublyRobust(trajectories, H, states, actions, weighted, gamma, p_e, p_b):
 
-    w, rmin, rmax = get_DR_params(trajectories, terminals, H, weighted, p_e, p_b)
-    d0, P, R = get_DR_model(states, actions, trajectories, p_e, p_b, terminals, rmin)
-    hat_q,hat_v,_hat_G = get_DR_hatq_hatv(d0, P, R, gamma, states,actions,terminals,H,p_e)
+    w, rmin, rmax = get_DR_params(trajectories, H, weighted, p_e, p_b)
+    d0, P, R = get_DR_model(states, actions, trajectories, p_e, p_b, rmin)
+    hat_q,hat_v,_hat_G = get_DR_hatq_hatv(d0, P, R, gamma, states,actions,H,p_e)
     G = 0
     n=len(trajectories)
     w = np.zeros((H,n))

@@ -78,9 +78,9 @@ from importance_sampling.DoublyRobust import *
 
 def variance_test(stochastic,store_results):
     actions = [-1, +1]
-    MC_iterations_list = [100]
-    repetitions=25
-    sizes=[7]
+    MC_iterations_list = [1000]
+    repetitions=1
+    sizes=[13]
 
     for MC_iterations in MC_iterations_list:
         IS_score_l = [[] for i in sizes]
@@ -118,7 +118,8 @@ def variance_test(stochastic,store_results):
             print("doing domain size ",domain_size)
             bound = domain_size // 2
             reward_grid = [-bound] + [-1.0 for i in range(domain_size - 2)] + [+bound]  # penalise length of the path
-            states = range(-bound, +bound + 1)
+            states = range(-bound+1, +bound)  # non-terminal states
+            next_states = range(-bound,bound+1)  # all states (including terminal for reward grid)
             IS_scores=[]
             SIS_scores=[]
             SIS_scores_search=[]
@@ -129,10 +130,10 @@ def variance_test(stochastic,store_results):
             PDIS_scores = []
             INCRIS_scores = []
             #domain
-            env = One_D_Domain(domain_size, reward_grid, bound, states, actions, stochastic=stochastic)
+            env = One_D_Domain(domain_size, reward_grid, bound, states, next_states, actions, stochastic=stochastic)
             # best policy
             policy = env.optimal_policy()
-            _, eval_score, terminals = env.monte_carlo_eval(policy,seed=0,MC_iterations=100)
+            _, eval_score = env.monte_carlo_eval(policy,seed=0,MC_iterations=100)
             print("true score ", eval_score)
             # behaviour policy
             behav = [[0.50, 0.50] for i in range(domain_size)]
@@ -143,7 +144,7 @@ def variance_test(stochastic,store_results):
 
             for run in range(repetitions):
                 print("doing run ", run)
-                trajectories, behav_score, terminals = env.monte_carlo_eval(behav,seed=run*MC_iterations,MC_iterations=MC_iterations)
+                trajectories, behav_score = env.monte_carlo_eval(behav,seed=run*MC_iterations,MC_iterations=MC_iterations)
 
                 period = 5000
                 num_plotpoints = MC_iterations // period
@@ -177,6 +178,7 @@ def variance_test(stochastic,store_results):
                 print(SIS_scores[-1])
 
                 S_sets = env.candidate_statesets()
+                print("candidates " , S_sets)
                 best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
                 SIS_scores_search.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False, period=period)[0])
                 print(SIS_scores_search[-1])
@@ -185,9 +187,9 @@ def variance_test(stochastic,store_results):
                 #            p_e=policy, p_b=behav, weighted=False)
                 # QSIS_scores.append(score[0])
                 # print(QSIS_scores)
-                #
-                # score = DoublyRobust(trajectories, H, states, actions, terminals, weighted=False, gamma=1.0,p_e=policy,
-                #                      p_b=behav)
+
+                score = DoublyRobust(trajectories, H, states, actions, weighted=False, gamma=1.0,p_e=policy,
+                                     p_b=behav)
                 DR_scores.append(score)
                 #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
                 #WSIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)[0])
@@ -225,11 +227,11 @@ def variance_test(stochastic,store_results):
             SIS_score_search_u[idx] = m + s
             SIS_score_search_m[idx] = m
 
-            m = np.mean(QSIS_scores) if not stochastic else np.mean(QSIS_scores) - eval_score
-            s = np.std(QSIS_scores) / np.sqrt(len(QSIS_scores))
-            QSIS_score_l[idx]=m-s
-            QSIS_score_u[idx] = m + s
-            QSIS_score_m[idx] = m
+            # m = np.mean(QSIS_scores) if not stochastic else np.mean(QSIS_scores) - eval_score
+            # s = np.std(QSIS_scores) / np.sqrt(len(QSIS_scores))
+            # QSIS_score_l[idx]=m-s
+            # QSIS_score_u[idx] = m + s
+            # QSIS_score_m[idx] = m
             # WSIS
             #m=np.mean(WSIS_scores)
             #s=np.std(WSIS_scores)/np.sqrt(len(WSIS_scores))
@@ -303,5 +305,5 @@ def variance_test(stochastic,store_results):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #convergence()
-    variance_test(stochastic=False,store_results=True)
+    variance_test(stochastic=False,store_results=False)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
