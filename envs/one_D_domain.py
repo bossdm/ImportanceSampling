@@ -58,6 +58,45 @@ class One_D_Domain(object):
             for s in range(S):
                 file.write("%.10f\n"%(np.log(policy[s][a]+10**(-20)),))   # needs to be logarithmic
 
+    def get_true_d0(self):
+        d0 = []
+        for i in range(-self.bound + 1, self.bound):  # go over all non-terminal states
+            prob = 1 if i == 0 else 0
+            d0.append(prob)
+        d0=np.array(d0)
+        #print("d0 = ", d0)
+        return d0
+
+    def get_true_P(self):
+        P = np.zeros((len(self.states),len(self.actions),len(self.states)+1))
+        states_coordinates = list(range(-self.bound + 1, self.bound))
+        high_prob = 0.95 if self.stochastic else 1.0
+        low_prob  = 0.05 if self.stochastic else 0.0
+        for s, state in enumerate(states_coordinates):  # go over all non-terminal states
+            for a in range(len(self.actions)):
+                if state < 0 and state >= -self.bound + 2:  # lift to the left
+                    P[s,a,s-1] = high_prob
+                    P[s,a,s+1] = low_prob
+                elif state > 0 and state <= self.bound - 2:  # lift to the right
+                    P[s, a, s - 1] = low_prob
+                    P[s, a, s + 1] = high_prob
+                else:
+                    action = +1 if a==1 else -1
+                    s_next = s + action
+                    s_next = len(self.states) if s_next < 0 or s_next == len(states_coordinates) else s_next # terminal
+                    P[s,a,s_next] = high_prob
+                    s_next = s - action
+                    s_next = len(self.states) if s_next < 0 or s_next == len(states_coordinates) else s_next # terminal
+                    P[s,a,s_next] = low_prob
+        #print("P = ", P)
+        return P
+
+    def get_true_R(self):
+        R = np.zeros((len(self.states),len(self.actions),len(self.states)+1)) - 1 # default reward is - 1
+        R[0,0,-1] = self.reward_grid[0] # first state (before left bound), go left, terminal next state -> positive reward
+        R[-1,1,-1] = self.reward_grid[-1] # last state (before right bound), go right, terminal next state -> negative reward
+        #print("R = ", R)
+        return R
 
     def monte_carlo_eval(self,policy,seed,MC_iterations):
         G = 0

@@ -80,7 +80,7 @@ def variance_test(stochastic,store_results):
     actions = [-1, +1]
     MC_iterations_list = [1000]
     repetitions=1
-    sizes=[11]
+    sizes=[17]
 
     for MC_iterations in MC_iterations_list:
         IS_score_l = [[] for i in sizes]
@@ -137,8 +137,10 @@ def variance_test(stochastic,store_results):
             env = One_D_Domain(domain_size, reward_grid, bound, states, next_states, actions, stochastic=stochastic)
             # best policy
             policy = env.optimal_policy()
-            _, eval_score = env.monte_carlo_eval(policy,seed=0,MC_iterations=1000)
-
+            _, eval_score_MC = env.monte_carlo_eval(policy,seed=0,MC_iterations=1000)
+            print("true score ", eval_score_MC)
+            gamma=1.0
+            _Q,_V,eval_score = compute_value(env.get_true_d0(), env.get_true_P(), env.get_true_R(), gamma, states, actions, H=1000, p_e=policy)
             print("true score ", eval_score)
             # behaviour policy
             behav = [[0.50, 0.50] for i in range(len(states))]
@@ -192,7 +194,6 @@ def variance_test(stochastic,store_results):
                 #            p_e=policy, p_b=behav, weighted=False)
                 # QSIS_scores.append(score[0])
                 # print(QSIS_scores)
-                gamma = 1.0
                 w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G  = get_model(trajectories, H, states, actions, weighted=False,
                                                                             gamma=gamma, p_e=policy, p_b=behav,JiangStyle=False)
                 print("hatG model : " , hat_G)
@@ -203,7 +204,6 @@ def variance_test(stochastic,store_results):
                 # print("hatG model : " , hat_G)
                 # score = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
 
-                # gamma = 1.0
                 # w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G  = get_model(trajectories, H, states, actions, weighted=False,
                 #                                                             gamma=gamma, p_e=policy, p_b=behav,JiangStyle=True)
                 # print("hatG model : " , hat_G)
@@ -343,5 +343,5 @@ def variance_test(stochastic,store_results):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #convergence()
-    variance_test(stochastic=True,store_results=False)
+    variance_test(stochastic=True,store_results=True)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
