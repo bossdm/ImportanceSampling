@@ -17,21 +17,25 @@ def get_DR_params(trajectories,H,weighted,p_e,p_b):
                 else:
                     (s, a, r) = traj[t]
                     ro = p_e[s][a]/p_b[s][a]
-                ro_product[t,i] = ro_product[t - 1,i] * ro
+                if t==0:
+                    ro_product[t, i] = ro
+                else:
+                    ro_product[t,i] = ro_product[t - 1,i] * ro
             if r < r_min:
                 r_min = r
             else:
                 if r > r_max:
                     r_max = r
-
-            if  weighted:
-                s = sum(ro_product[t,i])
-                w[t,:] = ro_product[t,i] / s
-            else:
-                w[t,:] = ro_product[t,i] / n
+    for t in range(H):
+        if  weighted:
+            s = sum(ro_product[t,:])
+            w[t,:] = ro_product[t,:] / s
+        else:
+            w[t,:] = ro_product[t,:] / n
+    #print(w)
     return w, r_min, r_max
 
-def get_DR_model(states, actions, trajectories, p_e,p_b,rmin):
+def get_DR_model(states, actions, trajectories, p_e,p_b,rmin,JiangStyle):
     """
     """
     numStates=len(states)
@@ -73,12 +77,18 @@ def get_DR_model(states, actions, trajectories, p_e,p_b,rmin):
         for a in range(numActions):
             for s_next in range(numNextStates):
                 if stateActionCounts[s,a] == 0:
-                    P[s,a,s_next] = 1 if s_next == s else 0# use self transition
+                    if JiangStyle:
+                        P[s,a,s_next] = 1 if s_next == s else 0# use self transition
+                    else:
+                        P[s,a,s_next] = 1 if s_next == numStates else 0 # assume termination
                 else:
                     P[s,a,s_next] = stateActionStateCounts[s,a,s_next] / stateActionCounts[s][a]
 
                 if stateActionStateCounts_includingHorizon[s,a,s_next] == 0:
-                    R[s,a,s_next] = 0  # not using Jiang rmin style
+                    if JiangStyle:
+                        R[s,a,s_next] =rmin
+                    else:
+                        R[s,a,s_next] = 0
                 else:
                     R[s,a,s_next] /= stateActionStateCounts_includingHorizon[s,a,s_next]
     print("model computed ")
@@ -86,6 +96,8 @@ def get_DR_model(states, actions, trajectories, p_e,p_b,rmin):
     #print("P",P)
     #print("R",R)
     return d0, P, R
+
+
 
 def get_DR_hatq_hatv(d0, P, R, gamma, states,actions,H,p_e):
     numStates = len(states)
@@ -106,33 +118,37 @@ def get_DR_hatq_hatv(d0, P, R, gamma, states,actions,H,p_e):
                     if s_next != numStates and t != H - 1:   # add next average Q value
                         Q[t,s, a]+= gamma * P[s,a,s_next] * pi_e[s_next,:].dot(Q[t+1,s_next,:])  # gamma is different from MAGIC code here
 
-
+        #print("Q[",t, "] = ",  Q[t])
 
     # compute V(s) = sum_a pi_e(a | s) * Q(s)
     V = np.zeros((H,numNextStates))
     for t in range(H):
         for s in range(numStates):
             V[t,s] = pi_e[s, :].dot(Q[t,s,:])
+        #print("V[",t,"]=", V[t])
     # compute G (the expected return from the initial state distribution
     G=0
     for s in range(numStates):
         G+=d0[s]*V[0,s]
 
     # finished computing
-    #print("values computed ")
-    #print("Q",Q)
-    #print("V",V)
-    print("DR ",G)
+    print("values computed ")
+
+
     return Q, V, G
 
-def DoublyRobust(trajectories, H, states, actions, weighted, gamma, p_e, p_b):
 
+def get_model(trajectories, H, states, actions, weighted,gamma, p_e,p_b,JiangStyle):
     w, rmin, rmax = get_DR_params(trajectories, H, weighted, p_e, p_b)
-    d0, P, R = get_DR_model(states, actions, trajectories, p_e, p_b, rmin)
-    hat_q,hat_v,_hat_G = get_DR_hatq_hatv(d0, P, R, gamma, states,actions,H,p_e)
+    d0, P, R = get_DR_model(states, actions, trajectories, p_e, p_b, rmin,JiangStyle)
+    hat_q,hat_v,hat_G = get_DR_hatq_hatv(d0, P, R, gamma, states,actions,H,p_e)
+    return w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G
+
+def DoublyRobust(trajectories, gamma, p_e, p_b, w, hat_q, hat_v):
+
+
     G = 0
     n=len(trajectories)
-    w = np.zeros((H,n))
     for i,traj in enumerate(trajectories):
         curGamma = 1.0
         for t, step in enumerate(traj):
@@ -149,5 +165,5 @@ def DoublyRobust(trajectories, H, states, actions, weighted, gamma, p_e, p_b):
             G -= curGamma * (w[t, i] * hat_q[t,s,a] - w2 * hat_v[t,s])  # correction with the discounted cumulative advantage based on reward model
             # based on model (up to that time)
             curGamma *= gamma
-
+    print("DR ",G)
     return G

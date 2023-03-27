@@ -80,13 +80,14 @@ def variance_test(stochastic,store_results):
     actions = [-1, +1]
     MC_iterations_list = [1000]
     repetitions=1
-    sizes=[13]
+    sizes=[11]
 
     for MC_iterations in MC_iterations_list:
         IS_score_l = [[] for i in sizes]
         WIS_score_l = [[] for i in sizes]
         PDIS_score_l = [[] for i in sizes]
         SIS_score_l = [[] for i in sizes]
+        DR_score_l = [[] for i in sizes]
         SIS_score_search_l = [[] for i in sizes]
         QSIS_score_l = [[] for i in sizes]
         WSIS_score_l = [[] for i in sizes]
@@ -96,6 +97,7 @@ def variance_test(stochastic,store_results):
         PDIS_score_u = [[] for i in sizes]
         SIS_score_u = [[] for i in sizes]
         SIS_score_search_u = [[] for i in sizes]
+        DR_score_u = [[] for i in sizes]
         QSIS_score_u = [[] for i in sizes]
         WSIS_score_u = [[] for i in sizes]
         INCRIS_score_u = [[] for i in sizes]
@@ -104,6 +106,7 @@ def variance_test(stochastic,store_results):
         PDIS_score_m = [[] for i in sizes]
         SIS_score_m = [[] for i in sizes]
         SIS_score_search_m = [[] for i in sizes]
+        DR_score_m = [[] for i in sizes]
         WSIS_score_m = [[] for i in sizes]
         INCRIS_score_m = [[] for i in sizes]
         QSIS_score_m = [[] for i in sizes]
@@ -113,6 +116,7 @@ def variance_test(stochastic,store_results):
         SIS_MSEs = []
         SIS_search_MSEs = []
         QSIS_MSEs = []
+        DR_MSEs = []
         INCRIS_MSEs = []
         for idx, domain_size in enumerate(sizes):  # [terminal, empty, lift(s), start, lift(s), empty, terminal] --> 1 or more lifts, horizon increasing
             print("doing domain size ",domain_size)
@@ -133,10 +137,11 @@ def variance_test(stochastic,store_results):
             env = One_D_Domain(domain_size, reward_grid, bound, states, next_states, actions, stochastic=stochastic)
             # best policy
             policy = env.optimal_policy()
-            _, eval_score = env.monte_carlo_eval(policy,seed=0,MC_iterations=100)
+            _, eval_score = env.monte_carlo_eval(policy,seed=0,MC_iterations=1000)
+
             print("true score ", eval_score)
             # behaviour policy
-            behav = [[0.50, 0.50] for i in range(domain_size)]
+            behav = [[0.50, 0.50] for i in range(len(states))]
 
             env.policy_to_theta(policy,"pi_e.txt")
             env.policy_to_theta(behav, "pi_b.txt")
@@ -187,10 +192,28 @@ def variance_test(stochastic,store_results):
                 #            p_e=policy, p_b=behav, weighted=False)
                 # QSIS_scores.append(score[0])
                 # print(QSIS_scores)
+                gamma = 1.0
+                w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G  = get_model(trajectories, H, states, actions, weighted=False,
+                                                                            gamma=gamma, p_e=policy, p_b=behav,JiangStyle=False)
+                print("hatG model : " , hat_G)
+                score = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
 
-                score = DoublyRobust(trajectories, H, states, actions, weighted=False, gamma=1.0,p_e=policy,
-                                     p_b=behav)
-                DR_scores.append(score)
+                # w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G  = get_model(trajectories, H, states, actions, weighted=True,
+                #                                                             gamma=gamma, p_e=policy, p_b=behav,JiangStyle=False)
+                # print("hatG model : " , hat_G)
+                # score = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
+
+                # gamma = 1.0
+                # w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G  = get_model(trajectories, H, states, actions, weighted=False,
+                #                                                             gamma=gamma, p_e=policy, p_b=behav,JiangStyle=True)
+                # print("hatG model : " , hat_G)
+                # score = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
+
+                # w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G  = get_model(trajectories, H, states, actions, weighted=True,
+                #                                                             gamma=gamma, p_e=policy, p_b=behav)
+                # print("hatG model : " , hat_G)
+                # wscore = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
+                #DR_scores.append(wscore)
                 #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
                 #WSIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)[0])
                 #print(WSIS_scores[-1])
@@ -221,11 +244,19 @@ def variance_test(stochastic,store_results):
             SIS_score_u[idx] = m + s
             SIS_score_m[idx] = m
 
+            # SIS search
             m = np.mean(SIS_scores_search) if not stochastic else np.mean(SIS_scores_search) - eval_score
             s = np.std(SIS_scores_search) / np.sqrt(len(SIS_scores_search))
             SIS_score_search_l[idx]=m-s
             SIS_score_search_u[idx] = m + s
             SIS_score_search_m[idx] = m
+
+            # DR
+            m=np.mean(DR_scores) if not stochastic else np.mean(DR_scores) - eval_score
+            s=np.std(DR_scores)/np.sqrt(len(DR_scores))
+            DR_score_l[idx]=m-s
+            DR_score_u[idx] = m + s
+            DR_score_m[idx] = m
 
             # m = np.mean(QSIS_scores) if not stochastic else np.mean(QSIS_scores) - eval_score
             # s = np.std(QSIS_scores) / np.sqrt(len(QSIS_scores))
@@ -252,6 +283,7 @@ def variance_test(stochastic,store_results):
                 PDIS_MSEs.append(np.mean([score ** 2 for score in PDIS_scores]))
                 SIS_MSEs.append(np.mean([score ** 2 for score in SIS_scores]))
                 SIS_search_MSEs.append(np.mean([score ** 2 for score in SIS_scores_search]))
+                DR_MSEs.append(np.mean([score ** 2 for score in DR_scores]))
                 QSIS_MSEs.append(np.mean([score ** 2 for score in QSIS_scores]))
                 INCRIS_MSEs.append(np.mean([score ** 2 for score in INCRIS_scores]))
             else:
@@ -259,6 +291,7 @@ def variance_test(stochastic,store_results):
                 PDIS_MSEs.append(np.mean([(score - eval_score) ** 2 for score in PDIS_scores]))
                 SIS_MSEs.append(np.mean([(score - eval_score) ** 2 for score in SIS_scores]))
                 SIS_search_MSEs.append(np.mean([(score - eval_score) ** 2 for score in SIS_scores_search]))
+                DR_MSEs.append(np.mean([(score - eval_score)** 2 for score in DR_scores]))
                 QSIS_MSEs.append(np.mean([(score - eval_score) ** 2 for score in QSIS_scores]))
                 INCRIS_MSEs.append(np.mean([(score - eval_score) ** 2 for score in INCRIS_scores]))
         if store_results:
@@ -273,17 +306,19 @@ def variance_test(stochastic,store_results):
 
             line4, = plt.plot(sizes, SIS_score_search_m,marker="D")
             b4 = plt.fill_between(sizes,  SIS_score_search_l,  SIS_score_search_u,alpha=0.25)
-
-            line5, = plt.plot(sizes, QSIS_score_m,marker="D")
-            b5 = plt.fill_between(sizes,  QSIS_score_l,  QSIS_score_u,alpha=0.25)
+            line5, = plt.plot(sizes, DR_score_m,marker="D")
+            b5 = plt.fill_between(sizes, DR_score_l, DR_score_u, alpha=0.25)
+            #line5, = plt.plot(sizes, QSIS_score_m,marker="D")
+            #b5 = plt.fill_between(sizes,  QSIS_score_l,  QSIS_score_u,alpha=0.25)
             #line5, = plt.plot(sizes, WSIS_score_m,marker="X")
             #b5 = plt.fill_between(sizes,  WSIS_score_l,  WSIS_score_u,alpha=0.25)
             line6, = plt.plot(sizes, INCRIS_score_m,marker="^")
             b6 = plt.fill_between(sizes,  INCRIS_score_l,  INCRIS_score_u,alpha=0.25)
             line7, = plt.plot(sizes, np.zeros((len(sizes))) + 1,linestyle="--")  if not stochastic else plt.plot(sizes, np.zeros((len(sizes))),linestyle="--")
 
-            plt.legend([line1,line2,line3,line4,line5,line6,line7], [r"$\hat{G}_{IS}$", r"$\hat{G}_{PDIS}$", r"$\hat{G}_{SIS}$ (Lift-states)",
-                                                           r"$\hat{G}_{SIS}$ (Search-based)", r"$\hat{G}_{SIS}$ (Q-based)","$\hat{G}_{INCRIS}$",r"$G$"])
+            plt.legend([line1,line2,line3,line4,line5,line5,line6,line7],[r"$\hat{G}_{IS}$", r"$\hat{G}_{PDIS}$", r"$\hat{G}_{SIS}$ (Lift-states)",
+                                                                          r"$\hat{G}_{SIS}$ (Search-based)", r"$\hat{G}_{SIS}$ (Q-based)", r"$\hat{G}_{DR}$",
+                                                                        "$\hat{G}_{INCRIS}$",r"$G$"])
 
             plt.xlabel('Domain size')
             if stochastic:
@@ -297,13 +332,16 @@ def variance_test(stochastic,store_results):
 
             # table
             writefile=open("variance_test_"+str(MC_iterations)+"_eps0.01"+stoch_string+"_nobarcheck_Q.txt","w")
-            writefile.write(r" & $\hat{G}_{IS}$ & $\hat{G}_{PDIS}$ & $\hat{G}_{SIS}$ (Lift-states) & $\hat{G}_{SIS}$ (Search-based) & $\hat{G}_{SIS}$ (Q-based) & $\hat{G}_{INCRIS}$ \\\ \n "\
+            writefile.write(r" & $\hat{G}_{IS}$ & $\hat{G}_{PDIS}$ & $\hat{G}_{SIS}$ (Lift-states) & $\hat{G}_{SIS}$"
+                            r" (Search-based) & $\hat{G}_{SIS}$ (Q-based) & $\hat{G}_{DR}$ & $\hat{G}_{INCRIS}$ \\\ \n "\
                            "\textbf{Size} & & & & & \\ \n" )
             for idx, size in enumerate(sizes):
-                writefile.write("%d & %.4f & %.4f  & %.4f & %.4f& %.4f %.4f\\ \n"%(size,IS_MSEs[idx],PDIS_MSEs[idx],SIS_MSEs[idx],SIS_search_MSEs[idx],QSIS_MSEs[idx],INCRIS_MSEs[idx]))
+                writefile.write("%d & %.4f & %.4f & %.4f & %.4f & %.4f& %.4f %.4f\\ \n"%(size,IS_MSEs[idx],PDIS_MSEs[idx],
+                                                                                         SIS_MSEs[idx],SIS_search_MSEs[idx],
+                                                                                         QSIS_MSEs[idx],DR_MSEs[idx], INCRIS_MSEs[idx]))
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #convergence()
-    variance_test(stochastic=False,store_results=False)
+    variance_test(stochastic=True,store_results=False)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
