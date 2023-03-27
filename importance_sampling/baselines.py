@@ -1,7 +1,7 @@
 import numpy as np
 
 def IS(trajectories,p_e=None,p_b=None,period=float("inf")):
-    printfile=open("../importance_trajectories.txt", "w")
+    printfile=open("sar_data.csv", "w+")
     E_G = 0
     scores=[]
     for i, trajectory in enumerate(trajectories):
@@ -10,12 +10,12 @@ def IS(trajectories,p_e=None,p_b=None,period=float("inf")):
         if p_e is None and p_b is None:
             for (s,a,r, rho) in trajectory:
                 importance*= rho
-                #printfile.write("%.4f,%.4f,%.4f,"%(p_e[s][a],p_b[s][a],r))
+                #printfile.write("%d, %d, %.8f, %.4f,"%(s, a,r))
                 G += r
         else:
             for (s,a,r) in trajectory:
                 importance*= p_e[s][a]/p_b[s][a]
-                #printfile.write("%.4f,%.4f,%.4f,"%(p_e[s][a],p_b[s][a],r))
+                printfile.write("%d, %d,%.8f, %.4f,"%(s,a,p_b[s][a],r))
                 G += r
         printfile.write("\n")
         G = importance*G

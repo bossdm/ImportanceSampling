@@ -98,15 +98,13 @@ def get_DR_hatq_hatv(d0, P, R, gamma, states,actions,terminals,H,p_e):
         pi_e = np.array(p_e)
     # compute Q_t(s,a) = sum_{s_next} ( average reward + average next Q-val )
     Q = np.zeros((H,numNextStates,numActions))
-    current_gamma = 1.0
     for t in range(H-1,-1,-1):
-        current_gamma*=gamma
         for s in range(numStates):
             for a in range(numActions):
                 for s_next in range(numNextStates):
                     Q[t,s,a] += P[s,a,s_next] * R[s,a,s_next]  # current average reward
-                    if s_next not in terminals and t != H - 1:   # next average Q value
-                        Q[t,s, a]+= current_gamma * P[s,a,s_next] * pi_e[s_next,:].dot(Q[t+1,s_next,:])  # gamma is different from MAGIC code here
+                    if s_next not in terminals and t != H - 1:   # add next average Q value
+                        Q[t,s, a]+= gamma * P[s,a,s_next] * pi_e[s_next,:].dot(Q[t+1,s_next,:])  # gamma is different from MAGIC code here
 
 
 

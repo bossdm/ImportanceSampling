@@ -50,6 +50,13 @@ class One_D_Domain(object):
             policy = [[0.00, 1.00] for i in range(self.domain_size)]
         return policy
 
+    def policy_to_theta(self,policy,filename): # write in the format of the MAGIC c++ code
+        file=open(filename,"w")
+        for s in range(self.domain_size):
+            for a in range(len(self.actions)):
+                file.write("%.10f\n"%(policy[s][a],))
+
+
     def monte_carlo_eval(self,policy,seed,MC_iterations):
         G = 0
         trajectories = []
@@ -76,7 +83,8 @@ class One_D_Domain(object):
         state = 0
         trajectory = []
         while True:
-            a = np.random.choice(list(range(len(self.actions))), p=policy[state])
+            state_index = self.states.index(state)
+            a = np.random.choice(list(range(len(self.actions))), p=policy[state_index])
             action = self.actions[a]
             # print("state ", state)
             # print("action ", action)
@@ -84,21 +92,20 @@ class One_D_Domain(object):
                 next_s = self.next_state_stochastic(state, action)
             else:
                 next_s = self.next_state(state, action)
-            state_index = self.states.index(next_s)
-            reward = self.reward_grid[state_index]
+            next_state_index = self.states.index(next_s)
+            reward = self.reward_grid[next_state_index]
             # print("reward ", reward)
             G += reward
-
-            trajectory.append((state, a, reward))
+            trajectory.append((state_index, a, reward))
             if np.abs(next_s) == self.bound:
-                terminal = next_s
+                terminal = next_state_index
                 #print("terminate at ",next_s, " reward ", self.reward_grid[state_index])
                 break
             state = next_s
 
         return trajectory, G, terminal
     def candidate_statesets(self):
-        nonterminal_states=self.states[1:-1]
+        nonterminal_states=range(1,self.domain_size - 1)
         return list(itertools.combinations(nonterminal_states, 0)) + list(itertools.combinations(nonterminal_states, 1)) + \
                   list(itertools.combinations(nonterminal_states, 2))
 
@@ -106,5 +113,5 @@ class One_D_Domain(object):
         l=[]
         for i in range(-self.bound,self.bound+1):
             if i < 0 and i >=  -self.bound + 2 or i > 0 and i <= self.bound - 2:
-                l.append(i)
+                l.append(self.bound + i)
         return l

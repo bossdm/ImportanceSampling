@@ -78,9 +78,9 @@ from importance_sampling.DoublyRobust import *
 
 def variance_test(stochastic,store_results):
     actions = [-1, +1]
-    MC_iterations_list = [1000]
+    MC_iterations_list = [100]
     repetitions=25
-    sizes=[7,9,11,13,15,17]
+    sizes=[7]
 
     for MC_iterations in MC_iterations_list:
         IS_score_l = [[] for i in sizes]
@@ -118,7 +118,7 @@ def variance_test(stochastic,store_results):
             print("doing domain size ",domain_size)
             bound = domain_size // 2
             reward_grid = [-bound] + [-1.0 for i in range(domain_size - 2)] + [+bound]  # penalise length of the path
-            states = list(range(-bound, +bound + 1))
+            states = range(-bound, +bound + 1)
             IS_scores=[]
             SIS_scores=[]
             SIS_scores_search=[]
@@ -136,6 +136,9 @@ def variance_test(stochastic,store_results):
             print("true score ", eval_score)
             # behaviour policy
             behav = [[0.50, 0.50] for i in range(domain_size)]
+
+            env.policy_to_theta(policy,"pi_e.txt")
+            env.policy_to_theta(behav, "pi_b.txt")
 
 
             for run in range(repetitions):
@@ -177,21 +180,21 @@ def variance_test(stochastic,store_results):
                 best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False)
                 SIS_scores_search.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False, period=period)[0])
                 print(SIS_scores_search[-1])
-                score, S_A = Qvalue_SIS(H=H,r_max=1,gamma=1.0,epsilon=0.05, alpha=0.25, trajectories=trajectories,
-                           terminals=terminals, state_space=states, action_space=actions,
-                           p_e=policy, p_b=behav, weighted=False)
-                QSIS_scores.append(score[0])
-                print(QSIS_scores)
-
-                score = DoublyRobust(trajectories, H, states, actions, terminals, weighted=False, gamma=1.0,p_e=policy,
-                                     p_b=behav)
+                # score, S_A = Qvalue_SIS(H=H,r_max=1,gamma=1.0,epsilon=0.05, alpha=0.25, trajectories=trajectories,
+                #            terminals=terminals, state_space=states, action_space=actions,
+                #            p_e=policy, p_b=behav, weighted=False)
+                # QSIS_scores.append(score[0])
+                # print(QSIS_scores)
+                #
+                # score = DoublyRobust(trajectories, H, states, actions, terminals, weighted=False, gamma=1.0,p_e=policy,
+                #                      p_b=behav)
                 DR_scores.append(score)
                 #best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True)
                 #WSIS_scores.append(SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True, period=period)[0])
                 #print(WSIS_scores[-1])
 
             # IS
-            m=np.mean(IS_scores) if not stochastic else np.abs(np.mean(IS_scores) - eval_score)
+            m=np.mean(IS_scores) if not stochastic else np.mean(IS_scores) - eval_score
             s=np.std(IS_scores)/np.sqrt(len(IS_scores))
             IS_score_l[idx]=m-s
             IS_score_u[idx] = m + s
