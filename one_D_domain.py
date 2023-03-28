@@ -349,12 +349,12 @@ def variance_test(stochastic,store_results):
                             r" (Search-based) & $\hat{G}_{SIS}$ (Q-based) & $\hat{G}_{DR}$ & $\hat{G}_{DRSIS}$ & $\hat{G}_{INCRIS}$ \\\ \n "\
                            "\textbf{Size} & & & & & \\ \n" )
             for idx, size in enumerate(sizes):
-                writefile.write("%d & %.4f & %.4f & %.4f & %.4f & %.4f & %.4f& %.4f %.4f\\ \n"%(size,IS_MSEs[idx],PDIS_MSEs[idx],
+                writefile.write("%d & %.4f & %.4f & %.4f & %.4f & %.4f & %.4f& %.4f &  %.4f\\ \n"%(size,IS_MSEs[idx],PDIS_MSEs[idx],
                                                                                          SIS_MSEs[idx],SIS_search_MSEs[idx],
                                                                                          QSIS_MSEs[idx],DR_MSEs[idx], DR_SIS_MSEs[idx],INCRIS_MSEs[idx]))
             writefile.close()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #convergence()
-    variance_test(stochastic=True,store_results=True)
+    variance_test(stochastic=False,store_results=True)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
