@@ -1,6 +1,5 @@
 from importance_sampling.compute_value import *
-
-def get_DR_params(trajectories,H,weighted,p_e,p_b):
+def get_DR_params(trajectories,H,weighted,p_e,p_b,negligible_states=[]):
     n = len(trajectories)
     w=np.zeros((H,n))
     ro_product = np.zeros((H,n))
@@ -18,6 +17,8 @@ def get_DR_params(trajectories,H,weighted,p_e,p_b):
                     ro = p_e[s][a]/p_b[s][a]
                 if t==0:
                     ro_product[t, i] = ro
+                elif s in negligible_states:
+                    ro_product[t, i] = ro_product[t - 1, i]  # do not compute the ratio
                 else:
                     ro_product[t,i] = ro_product[t - 1,i] * ro
             if r < r_min:
@@ -100,8 +101,8 @@ def get_DR_model(states, actions, trajectories, p_e,p_b,rmin,JiangStyle):
 
 
 
-def get_model(trajectories, H, states, actions, weighted,gamma, p_e,p_b,JiangStyle):
-    w, rmin, rmax = get_DR_params(trajectories, H, weighted, p_e, p_b)
+def get_model(trajectories, H, states, actions, weighted,gamma, p_e,p_b,JiangStyle,negligible_states=[]):
+    w, rmin, rmax = get_DR_params(trajectories, H, weighted, p_e, p_b,negligible_states)
     d0, P, R = get_DR_model(states, actions, trajectories, p_e, p_b, rmin,JiangStyle)
     hat_q,hat_v,hat_G = compute_value(d0, P, R, gamma, states,actions,H,p_e)
     return w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G
