@@ -78,7 +78,7 @@ from importance_sampling.DoublyRobust import *
 
 def variance_test(stochastic,store_results):
     actions = [-1, +1]
-    MC_iterations_list = [100,1000] #[100,1000]
+    MC_iterations_list = [1000] #[100,1000]
     repetitions=50
     sizes=[7,9,11,13,15,17]
 
@@ -209,6 +209,10 @@ def variance_test(stochastic,store_results):
                                                                          negligible_states=best_s_set)
                 score = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
                 DR_SIS_scores.append(score)
+
+                # epsilon 1.0 because that is one step difference
+                score = Qvalue_SIS(hat_q,trajectories,epsilon=1.0,states=states,actions=actions,p_e=policy,p_b=behav,weighted=False)[0]
+                QSIS_scores.append(score)
                 # w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G  = get_model(trajectories, H, states, actions, weighted=True,
                 #                                                             gamma=gamma, p_e=policy, p_b=behav,JiangStyle=False)
                 # print("hatG model : " , hat_G)
