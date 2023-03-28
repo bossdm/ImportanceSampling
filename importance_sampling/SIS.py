@@ -2,7 +2,7 @@ import numpy as np
 from importance_sampling.SIS_utils import *
 from importance_sampling.compute_value import compute_value
 
-def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
+def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False,epsilon=0.01):
     """
     exhaustively search for the best drop across sets of SA-pairs
     :param trajectories:
@@ -14,7 +14,6 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     """
     writefile=open("SIS_log.txt","w")
     writefile.write("S^A \t G \t V \t C \t hatA\n")
-    epsilon=0.01
     best_setsize=-1
     best_MSE = float("inf")
     for Ss in S_sets:
@@ -37,13 +36,13 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False):
     print("best_state_set",best_s_set)
     return best_G, best_s_set
 
-def get_Q_negligible_states(epsilon,state_space,action_space,Q):
+def get_Q_negligible_states(epsilon,states,actions,Q):
     Q_neg_states=[]
     H=len(Q)
-    for s in range(len(state_space)):
+    for s in range(len(states)):
         is_negligible=True
         for t in range(H):
-            for i in range(1,len(action_space)):
+            for i in range(1,len(actions)):
                 for j in range(i):   #check all pairs
                     if np.abs(Q[t,s,i] - Q[t,s,j]) >= epsilon:
                         is_negligible=False
@@ -67,7 +66,7 @@ def Qvalue_SIS(hat_q,trajectories,epsilon,states,actions,p_e,p_b,weighted=False)
     scores = SIS(trajectories,S_A,p_e,p_b,weighted)
     return scores, S_A
 
-def SIS(trajectories,Ss,p_e,p_b,weighted=False,period=float("inf")):
+def SIS(trajectories,Ss,p_e,p_b,weighted=False):
     """
     SIS for a particular given state-set
     :param trajectories:
