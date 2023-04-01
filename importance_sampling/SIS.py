@@ -64,7 +64,7 @@ def Qvalue_SIS(hat_q,trajectories,epsilon,states,actions,p_e,p_b,weighted=False)
     S_A =  get_Q_negligible_states(epsilon,states,actions,hat_q)
     print("state set ",S_A)
     scores = SIS(trajectories,S_A,p_e,p_b,weighted)
-    return scores, S_A
+    return scores
 
 def SIS(trajectories,Ss,p_e,p_b,weighted=False):
     """

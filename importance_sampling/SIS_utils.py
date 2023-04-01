@@ -33,10 +33,6 @@ def get_SIS_estimate(trajectories,p_e,p_b,Ss,weighted,period=float("inf")):
         Bs.append(B)
         rs.append(G_temp)
 
-        if weighted:
-            for i, traj in enumerate(trajectories):
-                Bs[i] /= SW
-
         Br = np.array(Bs) * np.array(rs)  # estimated returns at a (s,a)-set
         if i > 0 and i % period == 0:
 
