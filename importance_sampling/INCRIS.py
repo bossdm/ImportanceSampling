@@ -29,7 +29,6 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     Bs = []
     rs = []
     # k < t
-
     for i, trajectory in enumerate(trajectories):
         A, B, r = get_A_B_r(k, t, trajectory, p_e, p_b)
         As.append(A)
@@ -41,11 +40,15 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     # print("Br",np.mean(Br))
     # print("avg A",np.mean(A))
     # print("C", np.mean(C))
-    if np.abs(np.mean(A) - 1.0) > eps:
-        return float("inf"), Br  # never choose these when mean is not close to 1.0
+    # if np.abs(np.mean(A) - 1.0) > eps:
+    #     return float("inf"), Br  # never choose these when mean is not close to 1.0
     MSE = V + C[0, 1] ** 2
-    return MSE, Br
-def INCRIS(trajectories,p_e,p_b,H,weighted=False):
+    SW=sum(Bs)
+    # print(MSE)
+    # print(Br)
+    # print(SW)
+    return MSE, Br, SW
+def INCRIS(trajectories,p_e,p_b,H,max_t=20,weighted=False):
     """
     exhaustively search for the best drop across sets of SA-pairs
     :param trajectories:
@@ -61,25 +64,28 @@ def INCRIS(trajectories,p_e,p_b,H,weighted=False):
     for t in range(0,H+1):
         best_MSE = float("inf")
         best_k = None
-        for k in range(0,t+1): # loop over possible k
-            MSE, Br = get_MSE(k, t, trajectories,p_e,p_b)
+        for k in range(0,min(max_t,t+1)): # loop over possible k
+            MSE, Br, SW = get_MSE(k, t, trajectories,p_e,p_b)
             if MSE < best_MSE:
                 best_k = k
                 best_MSE = MSE
-                r_t = np.mean(Br)
+                if weighted:
+                    r_t = np.sum(Br) / SW
+                else:
+                    r_t = np.mean(Br)
         G+=r_t
         best_ks.append(best_k)
         #print("best k", best_k)
     return G, best_ks
 
-def INCRIS_Gs(trajectories,p_e,p_b,H,best_ks,weighted=False,period=float("inf")):
-    G_scores= []
-    for num_traj in range(period,len(trajectories)+period,period):
-        G = 0
-        for t in range(H):
-            MSE, Br = get_MSE(best_ks[t], t, trajectories[0:num_traj], p_e, p_b)
-            G_t = np.mean(Br)
-            G+=G_t
-        G_scores.append(G)
-    print("INCRIS ",G_scores[-1])
-    return G_scores, best_ks
+# def INCRIS_Gs(trajectories,p_e,p_b,H,best_ks,weighted=False,period=float("inf")):
+#     G_scores= []
+#     for num_traj in range(period,len(trajectories)+period,period):
+#         G = 0
+#         for t in range(H):
+#             MSE, Br = get_MSE(best_ks[t], t, trajectories[0:num_traj], p_e, p_b)
+#             G_t = np.mean(Br)
+#             G+=G_t
+#         G_scores.append(G)
+#     print("INCRIS ",G_scores[-1])
+#     return G_scores, best_ks

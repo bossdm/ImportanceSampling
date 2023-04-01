@@ -44,12 +44,12 @@ def get_SIS_estimate(trajectories,p_e,p_b,Ss,weighted,period=float("inf")):
 
     return As,Bs,rs,Br,SW,scores
 
-def get_MSE(As,Br,weighted):
+def get_MSE(As,Br,weighted,SW):
     C = np.cov(As, Br)
     V = np.var(Br)
     MSE = V + C[0, 1] ** 2  # MSE is variance + bias^2
     if weighted:
-        G = np.sum(Br)
+        G = np.sum(Br)/SW
     else:
         G = np.mean(Br)
     hatA = np.mean(As)

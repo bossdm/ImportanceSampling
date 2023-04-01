@@ -67,10 +67,10 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
                 MSE = np.mean([(score - eval_score)**2 for score in scores[method]])
                 MSEs[method].append(MSE)
         if store_results:
-            markers={"IS": "x","PDIS":"o","SIS (Lift states)":"s","SIS (Covariance testing)":"D","SIS (Q-based)": "v","INCRIS":"^",
-                     "DR": "x", "DRSIS (Lift states)": "s", "DRSIS (Covariance testing)": "D", "DRSIS (Q-based)": "v"}
-            colors={"IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red","SIS (Q-based)": "tab:purple","INCRIS":"tab:brown",
-                     "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red", "DRSIS (Q-based)": "tab:purple"}
+            markers={"WIS": "x","WPDIS":"o","SIS (Lift states)":"s","WSIS (Covariance testing)":"D","WSIS (Q-based)": "v","WINCRIS":"^",
+                     "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v"}
+            colors={"WIS": "tab:blue","WPDIS":"tab:orange","WSIS (Lift states)":"tab:green","WSIS (Covariance testing)":"tab:red","WSIS (Q-based)": "tab:purple","WINCRIS":"tab:brown",
+                     "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red", "WDRSIS (Q-based)": "tab:purple"}
 
             # table
             writefile=open("variance_test_"+str(MC_iterations)+tag+".txt","w")
@@ -91,6 +91,6 @@ if __name__ == '__main__':
     #convergence()
     MC_methods=["WIS","WPDIS","WSIS (Covariance testing)","WSIS (Q-based)","WINCRIS"]
     DR_methods = ["WDR", "WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    variance_test(methods=MC_methods, store_results=True,tag="MC_methods", epsilon_c=0.01,epsilon_q=1.0)
-    variance_test(methods=DR_methods, store_results=True, tag="DR_methods", epsilon_c=0.01,epsilon_q=1.0)
+    variance_test(methods=MC_methods, store_results=True,tag="MC_methods", epsilon_c=20.0,epsilon_q=25.0)
+    #variance_test(methods=DR_methods, store_results=True, tag="DR_methods", epsilon_c=20.0,epsilon_q=25.0)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
