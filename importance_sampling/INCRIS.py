@@ -48,7 +48,7 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     # print(Br)
     # print(SW)
     return MSE, Br, SW
-def INCRIS(trajectories,p_e,p_b,H,max_t=20,weighted=False):
+def INCRIS(trajectories,p_e,p_b,H,max_t=10,weighted=False):
     """
     exhaustively search for the best drop across sets of SA-pairs
     :param trajectories:
