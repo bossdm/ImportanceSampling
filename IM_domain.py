@@ -19,7 +19,7 @@ def convert_trajectories(trajectories):
     return sar_trajectories
 def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
     S=10
-    MC_iterations_list = [100] #[100,1000]
+    MC_iterations_list = [100,1000] #[100,1000]
     repetitions=50
     gamma=1.0
     d = np.zeros(1)
@@ -48,24 +48,24 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
             # env.policy_to_theta(policy,"pi_e.txt")
             # env.policy_to_theta(behav, "pi_b.txt")
             scores={}
+        for method in methods:
+            scores[method] = []
+
+        for run in range(repetitions):
+            print("doing run ", run)
+            agent_env_loop(env, p_b_agent, args, episodeCount=0, episodeLimit=MC_iterations,
+                           using_nextstate=False)
+            trajectories = convert_trajectories(p_b_agent.trajectories)
+
+            H = max([len(traj) for traj in trajectories])
             for method in methods:
-                scores[method] = []
-
-            for run in range(repetitions):
-                print("doing run ", run)
-                agent_env_loop(env, p_b_agent, args, episodeCount=0, episodeLimit=MC_iterations,
-                               using_nextstate=False)
-                trajectories = convert_trajectories(p_b_agent.trajectories)
-
-                H = max([len(traj) for traj in trajectories])
-                for method in methods:
-                    score = run_method(env,method,trajectories, policy, behav, H,epsilon_c,epsilon_q)
-                    scores[method].append(score)
+                score = run_method(env,method,trajectories, policy, behav, H,epsilon_c,epsilon_q)
+                scores[method].append(score)
 
         #add MSEs]
         for method in methods:
             MSE = np.mean([(score - eval_score)**2 for score in scores[method]])
-            MSEs[method].append(MSE)
+            MSEs[method].append(MSE / eval_score**2) # divide by maximum for interpretability
         if store_results:
             markers={"WIS": "x","WPDIS":"o","SIS (Lift states)":"s","WSIS (Covariance testing)":"D","WSIS (Q-based)": "v","WINCRIS":"^",
                      "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v"}
@@ -73,7 +73,7 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
                      "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red", "WDRSIS (Q-based)": "tab:purple"}
 
             # table
-            writefile=open("variance_test_"+str(MC_iterations)+tag+".txt","w")
+            writefile=open("variance_test_IM_"+str(MC_iterations)+tag+".txt","w")
             for method in methods:
                 writefile.write(r" & " + method)
             writefile.write("\n \\textbf{MC iterations}")
@@ -81,8 +81,8 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
                     writefile.write("& ")
             writefile.write("\n" )
             for idx, it in enumerate(MC_iterations_list):
+                writefile.write("%d " % (it,))
                 for method in methods:
-                    writefile.write("%d "%(it,))
                     writefile.write("& %.4f "%(MSEs[method][idx]))
                 writefile.write("\n")
             writefile.close()
