@@ -62,10 +62,10 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
                     score = run_method(env,method,trajectories, policy, behav, H,epsilon_c,epsilon_q)
                     scores[method].append(score)
 
-            #add MSEs]
-            for method in methods:
-                MSE = np.mean([(score - eval_score)**2 for score in scores[method]])
-                MSEs[method].append(MSE)
+        #add MSEs]
+        for method in methods:
+            MSE = np.mean([(score - eval_score)**2 for score in scores[method]])
+            MSEs[method].append(MSE)
         if store_results:
             markers={"WIS": "x","WPDIS":"o","SIS (Lift states)":"s","WSIS (Covariance testing)":"D","WSIS (Q-based)": "v","WINCRIS":"^",
                      "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v"}
