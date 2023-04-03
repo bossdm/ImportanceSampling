@@ -1,10 +1,10 @@
 from importance_sampling.run_method import run_method
 from importance_sampling.compute_value import compute_value
-import matplotlib.pyplot as plt
 from RCMDP_Benchmarks.InventoryManagement import InventoryManagement,args
 from RCMDP.agent.agent_env_loop import agent_env_loop
 from RCMDP.agent.set_agent import RandomAgent, set_agent
-from RCMDP.Utils import resume
+from RCMDP.Utils import check_folder
+import pickle
 
 import numpy as np
 import os
@@ -17,9 +17,10 @@ def convert_trajectories(trajectories):
             sar_trajectory.append((s[0],a,r))
         sar_trajectories.append(sar_trajectory)
     return sar_trajectories
-def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
+def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file):
+    check_folder("IM_trajectories/")
     S=10
-    MC_iterations_list = [100,1000] #[100,1000]
+    MC_iterations_list = [1000] #[100,1000]
     repetitions=50
     gamma=1.0
     d = np.zeros(1)
@@ -38,24 +39,28 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
                                        H=env.stepsPerEpisode,
                                        p_e=policy)
     print("true score ", eval_score)
+    MSEs = {}
+    for method in methods:
+        MSEs[method] = []
+        # _, eval_score_MC = env.monte_carlo_eval(policy,seed=0,MC_iterations=1000)
+        # print("true score ", eval_score_MC)
+        # env.policy_to_theta(policy,"pi_e.txt")
+        # env.policy_to_theta(behav, "pi_b.txt")
+        scores = {}
+    for method in methods:
+        scores[method] = []
 
     for MC_iterations in MC_iterations_list:
-        MSEs = {}
-        for method in methods:
-            MSEs[method] = []
-            #_, eval_score_MC = env.monte_carlo_eval(policy,seed=0,MC_iterations=1000)
-            #print("true score ", eval_score_MC)
-            # env.policy_to_theta(policy,"pi_e.txt")
-            # env.policy_to_theta(behav, "pi_b.txt")
-            scores={}
-        for method in methods:
-            scores[method] = []
-
         for run in range(repetitions):
             print("doing run ", run)
-            agent_env_loop(env, p_b_agent, args, episodeCount=0, episodeLimit=MC_iterations,
-                           using_nextstate=False)
-            trajectories = convert_trajectories(p_b_agent.trajectories)
+            if from_file:
+                trajectories = pickle.load(open("IM_trajectories/run"+str(run)+".pkl","rb"))
+                trajectories = trajectories[:MC_iterations]
+            else:
+                agent_env_loop(env, p_b_agent, args, episodeCount=0, episodeLimit=MC_iterations,
+                               using_nextstate=False)
+                trajectories = convert_trajectories(p_b_agent.trajectories)
+                pickle.dump(trajectories,open("IM_trajectories/run"+str(run)+".pkl","wb"))
 
             H = max([len(traj) for traj in trajectories])
             for method in methods:
@@ -70,27 +75,24 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q):
             markers={"WIS": "x","WPDIS":"o","SIS (Lift states)":"s","WSIS (Covariance testing)":"D","WSIS (Q-based)": "v","WINCRIS":"^",
                      "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v"}
             colors={"WIS": "tab:blue","WPDIS":"tab:orange","WSIS (Lift states)":"tab:green","WSIS (Covariance testing)":"tab:red","WSIS (Q-based)": "tab:purple","WINCRIS":"tab:brown",
-                     "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red", "WDRSIS (Q-based)": "tab:purple"}
+                    "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red", "WDRSIS (Q-based)": "tab:purple"}
 
             # table
             writefile=open("variance_test_IM_"+str(MC_iterations)+tag+".txt","w")
             for method in methods:
                 writefile.write(r" & " + method)
-            writefile.write("\n \\textbf{MC iterations}")
             for method in methods:
-                    writefile.write("& ")
+                writefile.write("& ")
             writefile.write("\n" )
-            for idx, it in enumerate(MC_iterations_list):
-                writefile.write("%d " % (it,))
-                for method in methods:
-                    writefile.write("& %.4f "%(MSEs[method][idx]))
-                writefile.write("\n")
+            for method in methods:
+                writefile.write("& %.4f "%(MSEs[method][-1]))
+            writefile.write("\n")
             writefile.close()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #convergence()
     MC_methods=["WIS","WPDIS","WSIS (Covariance testing)","WSIS (Q-based)","WINCRIS"]
-    DR_methods = ["WDR", "WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    variance_test(methods=MC_methods, store_results=True,tag="MC_methods", epsilon_c=20.0,epsilon_q=25.0)
-    #variance_test(methods=DR_methods, store_results=True, tag="DR_methods", epsilon_c=20.0,epsilon_q=25.0)
+    DR_methods = ["WDR","WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
+    variance_test(methods=MC_methods, store_results=True,tag="MC_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True)
+    variance_test(methods=DR_methods, store_results=True, tag="DR_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

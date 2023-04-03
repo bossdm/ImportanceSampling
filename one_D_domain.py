@@ -2,8 +2,8 @@ from importance_sampling.run_method import run_method
 from importance_sampling.compute_value import compute_value
 import matplotlib.pyplot as plt
 from envs.one_D_domain import *
-
-
+import pickle
+from RCMDP.Utils import check_folder
 
 
 
@@ -76,11 +76,15 @@ from envs.one_D_domain import *
 
 
 
-def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q):
+def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q,from_file):
+    stoch_string = "_stochastic" if stochastic else ""
+    folder="1D"+stoch_string+"_trajectories/"
+    check_folder(folder)
     actions = [-1, +1]
     MC_iterations_list = [100] #[100,1000]
-    repetitions=10
+    repetitions=200
     sizes=[7,9,11,13,15,17]
+
 
     for MC_iterations in MC_iterations_list:
         score_l = {}
@@ -119,7 +123,13 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
 
             for run in range(repetitions):
                 print("doing run ", run)
-                trajectories, behav_score = env.monte_carlo_eval(behav,seed=run*MC_iterations,MC_iterations=MC_iterations)
+                savefile=folder+"size"+str(domain_size)+"_run" + str(run) + ".pkl"
+                if from_file:
+                    trajectories = pickle.load(open(savefile, "rb"))
+                    trajectories = trajectories[:MC_iterations]
+                else:
+                    trajectories, behav_score = env.monte_carlo_eval(behav,seed=run*MC_iterations,MC_iterations=MC_iterations)
+                    pickle.dump(trajectories, open(savefile, "wb"))
 
                 # period = 5000
                 # num_plotpoints = MC_iterations // period
@@ -160,7 +170,6 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
 
             plt.xlabel('Domain size')
             plt.ylabel('Residual ($\hat{G} - G$)')
-            stoch_string="_stochastic" if stochastic else ""
             plt.savefig("variance_test_"+str(MC_iterations)+stoch_string+tag+".pdf")
 
             plt.close()
@@ -174,8 +183,8 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
                 writefile.write("& ")
             writefile.write("\n" )
             for idx, size in enumerate(sizes):
+                writefile.write("%d " % (size,))
                 for method in methods:
-                    writefile.write("%d "%(size,))
                     writefile.write("& %.4f "%(MSEs[method][idx]))
                 writefile.write("\n")
             writefile.close()
@@ -184,6 +193,6 @@ if __name__ == '__main__':
     #convergence()
     MC_methods=["IS","PDIS","SIS (Lift states)","SIS (Covariance testing)","SIS (Q-based)","INCRIS"]
     DR_methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
-    variance_test(methods=MC_methods, stochastic=False,store_results=True,tag="MC_methods",scale="linear",epsilon_c=0.01,epsilon_q=1.0)
-    variance_test(methods=DR_methods, stochastic=False, store_results=True, tag="DR_methods",scale="log",epsilon_c=0.01,epsilon_q=1.0)
+    variance_test(methods=MC_methods, stochastic=True,store_results=True,tag="MC_methods",scale="linear",epsilon_c=0.01,epsilon_q=1.0,from_file=True)
+    variance_test(methods=DR_methods, stochastic=True, store_results=True, tag="DR_methods",scale="log",epsilon_c=0.01,epsilon_q=1.0,from_file=True)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
