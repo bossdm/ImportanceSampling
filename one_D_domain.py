@@ -74,17 +74,66 @@ from RCMDP.Utils import check_folder
 #     plt.legend([line1, line2, line3, line4], ["IS", "PDIS", "SIS", "INCRIS"])
 #     plt.savefig("convergence.pdf")
 
+def get_method_scores(sizes,MC_iterations,stochastic,methods,repetitions,folder, from_file,epsilon_c,epsilon_q):
+    scores = {}
+    for method in methods:
+        scores[method] =  [[] for i in sizes]
+    for idx, domain_size in enumerate(sizes):  # [terminal, empty, lift(s), start, lift(s), empty, terminal] --> 1 or more lifts, horizon increasing
+        print("doing domain size ", domain_size)
+        bound = domain_size // 2
+        actions = [-1, +1]
+        reward_grid = [-bound] + [-1.0 for i in range(domain_size - 2)] + [+bound]  # penalise length of the path
+        states = range(-bound + 1, +bound)  # non-terminal states
+        next_states = range(-bound, bound + 1)  # all states (including terminal for reward grid)
 
+        # domain
+        env = One_D_Domain(domain_size, reward_grid, bound, states, next_states, actions, stochastic=stochastic)
+        # best policy
+        policy = env.optimal_policy()
+        # _, eval_score_MC = env.monte_carlo_eval(policy,seed=0,MC_iterations=1000)
+        # print("true score ", eval_score_MC)
+        gamma = 1.0
+        _Q, _V, eval_score = compute_value(env.get_true_d0(), env.get_true_P(), env.get_true_R(), gamma, states,
+                                           actions, H=1000, p_e=policy)
+        print("true score ", eval_score)
+        # behaviour policy
+        behav = [[0.50, 0.50] for i in range(len(states))]
 
-def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q,from_file):
+        env.policy_to_theta(policy, "pi_e.txt")
+        env.policy_to_theta(behav, "pi_b.txt")
+        for run in range(repetitions):
+            print("doing run ", run)
+            savefile = folder + "size" + str(domain_size) + "_run" + str(run) + ".pkl"
+            if from_file:
+                trajectories = pickle.load(open(savefile, "rb"))
+                trajectories = trajectories[:MC_iterations]
+            else:
+                trajectories, behav_score = env.monte_carlo_eval(behav, seed=run * MC_iterations,
+                                                                 MC_iterations=MC_iterations)
+                pickle.dump(trajectories, open(savefile, "wb"))
+
+            # period = 5000
+            # num_plotpoints = MC_iterations // period
+            # x = [i * period for i in range(num_plotpoints + 1)]
+
+            # note: this is intuitive but does not reflect how the algorithm would work for smaller number of trajectories; alternative is to recompute for each subset of
+            # trajectories until then
+            H = max([len(traj) for traj in trajectories])
+            for method in methods:
+                score = run_method(env, method, trajectories, policy, behav, H, epsilon_c, epsilon_q)
+                scores[method][idx].append(score)
+    return scores, eval_score
+
+def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q,
+                  from_file,load_scores):
     stoch_string = "_stochastic" if stochastic else ""
-    folder="1D"+stoch_string+"_trajectories/"
+    folder="1D"+stoch_string+"_trajectories/" # trajectory folder
     check_folder(folder)
-    actions = [-1, +1]
-    MC_iterations_list = [100] #[100,1000]
+    resultsfolder = "1D" + stoch_string + "_results/" # results folder
+    check_folder(resultsfolder)
+    MC_iterations_list = [1000] #[100,1000]
     repetitions=200
     sizes=[7,9,11,13,15,17]
-
 
     for MC_iterations in MC_iterations_list:
         score_l = {}
@@ -96,63 +145,26 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
             score_u[method] = [[] for i in sizes]
             score_m[method] = [[] for i in sizes]
             MSEs[method] = []
-        for idx, domain_size in enumerate(sizes):  # [terminal, empty, lift(s), start, lift(s), empty, terminal] --> 1 or more lifts, horizon increasing
-            print("doing domain size ",domain_size)
-            bound = domain_size // 2
-            reward_grid = [-bound] + [-1.0 for i in range(domain_size - 2)] + [+bound]  # penalise length of the path
-            states = range(-bound+1, +bound)  # non-terminal states
-            next_states = range(-bound,bound+1)  # all states (including terminal for reward grid)
-
-            #domain
-            env = One_D_Domain(domain_size, reward_grid, bound, states, next_states, actions, stochastic=stochastic)
-            # best policy
-            policy = env.optimal_policy()
-            #_, eval_score_MC = env.monte_carlo_eval(policy,seed=0,MC_iterations=1000)
-            #print("true score ", eval_score_MC)
-            gamma=1.0
-            _Q,_V,eval_score = compute_value(env.get_true_d0(), env.get_true_P(), env.get_true_R(), gamma, states, actions, H=1000, p_e=policy)
-            print("true score ", eval_score)
-            # behaviour policy
-            behav = [[0.50, 0.50] for i in range(len(states))]
-
-            env.policy_to_theta(policy,"pi_e.txt")
-            env.policy_to_theta(behav, "pi_b.txt")
-            scores={}
-            for method in methods:
-                scores[method] = []
-
-            for run in range(repetitions):
-                print("doing run ", run)
-                savefile=folder+"size"+str(domain_size)+"_run" + str(run) + ".pkl"
-                if from_file:
-                    trajectories = pickle.load(open(savefile, "rb"))
-                    trajectories = trajectories[:MC_iterations]
-                else:
-                    trajectories, behav_score = env.monte_carlo_eval(behav,seed=run*MC_iterations,MC_iterations=MC_iterations)
-                    pickle.dump(trajectories, open(savefile, "wb"))
-
-                # period = 5000
-                # num_plotpoints = MC_iterations // period
-                # x = [i * period for i in range(num_plotpoints + 1)]
-
-                # note: this is intuitive but does not reflect how the algorithm would work for smaller number of trajectories; alternative is to recompute for each subset of
-                # trajectories until then
-                H = max([len(traj) for traj in trajectories])
-                for method in methods:
-                    score = run_method(env,method,trajectories, policy, behav, H,epsilon_c,epsilon_q)
-                    scores[method].append(score)
-            # now get stats on the scores
-            for method in methods:
-                s = scores[method]
-                m = np.mean(s) - eval_score
-                s = np.std(s) / np.sqrt(len(s))
+        scorefile = resultsfolder+"variance_test_"+str(MC_iterations)+stoch_string+tag+ "_scores.pkl"
+        if load_scores:
+            scores, eval_score = pickle.load(open(scorefile,"rb"))
+            print("loaded scores ", scores)
+            print("loaded eval score ", eval_score)
+        else:
+            scores, eval_score = get_method_scores(sizes, MC_iterations, stochastic, methods, repetitions, folder, from_file, epsilon_c,
+                              epsilon_q)
+            pickle.dump((scores, eval_score),open(scorefile,"wb"))
+        # now get stats on the scores
+        for method in methods:
+            for idx, size in enumerate(sizes):
+                sc = scores[method][idx]
+                m = np.mean(sc) - eval_score
+                s = np.std(sc) / np.sqrt(len(sc))
                 score_l[method][idx] = m - s
                 score_u[method][idx] = m + s
                 score_m[method][idx] = m
 
-            #add MSEs]
-            for method in methods:
-                MSE = np.mean([(score - eval_score)**2 for score in scores[method]])
+                MSE = np.mean([(score - eval_score)**2 for score in scores[method][idx]])
                 MSEs[method].append(MSE)
         if store_results:
             markers={"IS": "x","PDIS":"o","SIS (Lift states)":"s","SIS (Covariance testing)":"D","SIS (Q-based)": "v","INCRIS":"^",
@@ -170,15 +182,15 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
 
             plt.xlabel('Domain size')
             plt.ylabel('Residual ($\hat{G} - G$)')
-            plt.savefig("variance_test_"+str(MC_iterations)+stoch_string+tag+".pdf")
+            plt.savefig(resultsfolder+"variance_test_"+str(MC_iterations)+tag+".pdf")
 
             plt.close()
 
             # table
-            writefile=open("variance_test_"+str(MC_iterations)+stoch_string+tag+".txt","w")
+            writefile=open(resultsfolder+"variance_test_"+str(MC_iterations)+tag+".txt","w")
             for method in methods:
                 writefile.write(r" & " + method)
-            writefile.write("\n \\textbf(Size}")
+            writefile.write("\n \\textbf{Domain size}")
             for method in methods:
                 writefile.write("& ")
             writefile.write("\n" )
@@ -193,6 +205,10 @@ if __name__ == '__main__':
     #convergence()
     MC_methods=["IS","PDIS","SIS (Lift states)","SIS (Covariance testing)","SIS (Q-based)","INCRIS"]
     DR_methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
-    variance_test(methods=MC_methods, stochastic=True,store_results=True,tag="MC_methods",scale="linear",epsilon_c=0.01,epsilon_q=1.0,from_file=True)
-    variance_test(methods=DR_methods, stochastic=True, store_results=True, tag="DR_methods",scale="log",epsilon_c=0.01,epsilon_q=1.0,from_file=True)
+    #epsilon_c = 0.01 for deterministic
+    #epsilon_q = 1.0 for deterministic
+    variance_test(methods=MC_methods, stochastic=True,store_results=True,tag="MC_methods",scale="linear",epsilon_c=0.01,epsilon_q=1.0,
+                  from_file=True,load_scores=False)
+    variance_test(methods=DR_methods, stochastic=True, store_results=True, tag="DR_methods",scale="log",epsilon_c=0.01,epsilon_q=1.0,
+                  from_file=True,load_scores=False)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

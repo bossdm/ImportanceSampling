@@ -17,10 +17,32 @@ def convert_trajectories(trajectories):
             sar_trajectory.append((s[0],a,r))
         sar_trajectories.append(sar_trajectory)
     return sar_trajectories
-def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file):
+
+def get_scores(methods, repetitions, from_file, MC_iterations,env,p_b_agent,policy,behav,epsilon_c,epsilon_q):
+    scores = {}
+    for method in methods:
+        scores[method] = []
+    for run in range(repetitions):
+        print("doing run ", run)
+        if from_file:
+            trajectories = pickle.load(open("IM_trajectories/run" + str(run) + ".pkl", "rb"))
+            trajectories = trajectories[:MC_iterations]
+        else:
+            agent_env_loop(env, p_b_agent, args, episodeCount=0, episodeLimit=MC_iterations,
+                           using_nextstate=False)
+            trajectories = convert_trajectories(p_b_agent.trajectories)
+            pickle.dump(trajectories, open("IM_trajectories/run" + str(run) + ".pkl", "wb"))
+        H = max([len(traj) for traj in trajectories])
+        for method in methods:
+            score = run_method(env, method, trajectories, policy, behav, H, epsilon_c, epsilon_q)
+            scores[method].append(score)
+    return scores
+def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file,load_scores):
     check_folder("IM_trajectories/")
     S=10
-    MC_iterations_list = [1000] #[100,1000]
+    MC_iterations_list = [100] #[100,1000]
+    resultsfolder = "IM_results/"  # results folder
+    check_folder(resultsfolder)
     repetitions=50
     gamma=1.0
     d = np.zeros(1)
@@ -46,26 +68,17 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file):
         # print("true score ", eval_score_MC)
         # env.policy_to_theta(policy,"pi_e.txt")
         # env.policy_to_theta(behav, "pi_b.txt")
-        scores = {}
-    for method in methods:
-        scores[method] = []
+
 
     for MC_iterations in MC_iterations_list:
-        for run in range(repetitions):
-            print("doing run ", run)
-            if from_file:
-                trajectories = pickle.load(open("IM_trajectories/run"+str(run)+".pkl","rb"))
-                trajectories = trajectories[:MC_iterations]
-            else:
-                agent_env_loop(env, p_b_agent, args, episodeCount=0, episodeLimit=MC_iterations,
-                               using_nextstate=False)
-                trajectories = convert_trajectories(p_b_agent.trajectories)
-                pickle.dump(trajectories,open("IM_trajectories/run"+str(run)+".pkl","wb"))
-
-            H = max([len(traj) for traj in trajectories])
-            for method in methods:
-                score = run_method(env,method,trajectories, policy, behav, H,epsilon_c,epsilon_q)
-                scores[method].append(score)
+        scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + tag + "_scores.pkl"
+        if load_scores:
+            scores = pickle.load(open(scorefile, "rb"))
+            print("loaded scores ", scores)
+        else:
+            scores = get_scores(methods, repetitions, from_file, MC_iterations, env, p_b_agent, policy, behav, epsilon_c,
+                       epsilon_q)
+            pickle.dump(scores,open(scorefile, "wb"))
 
         #add MSEs]
         for method in methods:
@@ -78,7 +91,7 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file):
                     "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red", "WDRSIS (Q-based)": "tab:purple"}
 
             # table
-            writefile=open("variance_test_IM_"+str(MC_iterations)+tag+".txt","w")
+            writefile=open(resultsfolder+"variance_test_IM_"+str(MC_iterations)+tag+".txt","w")
             for method in methods:
                 writefile.write(r" & " + method)
             for method in methods:
@@ -93,6 +106,6 @@ if __name__ == '__main__':
     #convergence()
     MC_methods=["WIS","WPDIS","WSIS (Covariance testing)","WSIS (Q-based)","WINCRIS"]
     DR_methods = ["WDR","WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    variance_test(methods=MC_methods, store_results=True,tag="MC_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True)
-    variance_test(methods=DR_methods, store_results=True, tag="DR_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True)
+    variance_test(methods=MC_methods, store_results=True,tag="MC_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True,load_scores=True)
+    variance_test(methods=DR_methods, store_results=True, tag="DR_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True,load_scores=True)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
