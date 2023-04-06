@@ -4,7 +4,17 @@ import matplotlib.pyplot as plt
 from envs.one_D_domain import *
 import pickle
 from RCMDP.Utils import check_folder
+import argparse
 
+parser = argparse.ArgumentParser(
+                    prog = 'One D domain',
+                    description = 'run RL on a one D problem with lift states')
+parser.add_argument('--method', dest='method',type=str,default="MC") #MC or DR
+parser.add_argument('--stochastic', dest='stochastic',type=str,default="deterministic") # deterministic or stochastic
+parser.add_argument('--tag',dest="tag",type=str,default="MC_methods") #
+parser.add_argument('--load_scores',dest="load_scores",type=bool)
+
+args = parser.parse_args()
 
 
 #
@@ -74,7 +84,7 @@ from RCMDP.Utils import check_folder
 #     plt.legend([line1, line2, line3, line4], ["IS", "PDIS", "SIS", "INCRIS"])
 #     plt.savefig("convergence.pdf")
 
-def get_method_scores(sizes,MC_iterations,stochastic,methods,repetitions,folder, from_file,epsilon_c,epsilon_q):
+def get_method_scores(sizes,MC_iterations,stochastic,methods,repetitions,folder, trajectories_from_file,epsilon_c,epsilon_q, max_t):
     scores = {}
     for method in methods:
         scores[method] =  [[] for i in sizes]
@@ -104,7 +114,7 @@ def get_method_scores(sizes,MC_iterations,stochastic,methods,repetitions,folder,
         for run in range(repetitions):
             print("doing run ", run)
             savefile = folder + "size" + str(domain_size) + "_run" + str(run) + ".pkl"
-            if from_file:
+            if trajectories_from_file:
                 trajectories = pickle.load(open(savefile, "rb"))
                 trajectories = trajectories[:MC_iterations]
             else:
@@ -120,19 +130,19 @@ def get_method_scores(sizes,MC_iterations,stochastic,methods,repetitions,folder,
             # trajectories until then
             H = max([len(traj) for traj in trajectories])
             for method in methods:
-                score = run_method(env, method, trajectories, policy, behav, H, epsilon_c, epsilon_q)
+                score = run_method(env, method, trajectories, policy, behav, H, epsilon_c, epsilon_q,max_t)
                 scores[method][idx].append(score)
     return scores, eval_score
 
-def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q,
-                  from_file,load_scores):
-    stoch_string = "_stochastic" if stochastic else ""
+def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q,max_t,
+                  trajectories_from_file,load_scores):
+    stoch_string = "_"+stochastic if stochastic != "deterministic" else ""
     folder="1D"+stoch_string+"_trajectories/" # trajectory folder
     check_folder(folder)
     resultsfolder = "1D" + stoch_string + "_results/" # results folder
     check_folder(resultsfolder)
-    MC_iterations_list = [1000] #[100,1000]
-    repetitions=200
+    MC_iterations_list = [100,1000]
+    repetitions=200 if stochastic!="deterministic" else 50
     sizes=[7,9,11,13,15,17]
 
     for MC_iterations in MC_iterations_list:
@@ -151,8 +161,9 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
             print("loaded scores ", scores)
             print("loaded eval score ", eval_score)
         else:
-            scores, eval_score = get_method_scores(sizes, MC_iterations, stochastic, methods, repetitions, folder, from_file, epsilon_c,
-                              epsilon_q)
+            scores, eval_score = get_method_scores(sizes, MC_iterations, stochastic, methods, repetitions, folder,
+                                                   trajectories_from_file, epsilon_c,
+                              epsilon_q,max_t)
             pickle.dump((scores, eval_score),open(scorefile,"wb"))
         # now get stats on the scores
         for method in methods:
@@ -168,9 +179,18 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
                 MSEs[method].append(MSE)
         if store_results:
             markers={"IS": "x","PDIS":"o","SIS (Lift states)":"s","SIS (Covariance testing)":"D","SIS (Q-based)": "v","INCRIS":"^",
-                     "DR": "x", "DRSIS (Lift states)": "s", "DRSIS (Covariance testing)": "D", "DRSIS (Q-based)": "v"}
+                     "DR": "x", "DRSIS (Lift states)": "s", "DRSIS (Covariance testing)": "D", "DRSIS (Q-based)": "v",
+                     "WIS": "x", "WPDIS": "o", "WSIS (Lift states)": "s", "WSIS (Covariance testing)": "D",
+                     "WSIS (Q-based)": "v", "WINCRIS": "^",
+                     "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v",
+                     }
             colors={"IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red","SIS (Q-based)": "tab:purple","INCRIS":"tab:brown",
-                     "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red", "DRSIS (Q-based)": "tab:purple"}
+                     "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red", "DRSIS (Q-based)": "tab:purple",
+                    "WIS": "tab:blue", "WPDIS": "tab:orange", "WSIS (Lift states)": "tab:green",
+                    "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple", "WINCRIS": "tab:brown",
+                    "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red",
+                    "WDRSIS (Q-based)": "tab:purple"
+                    }
             lines=[]
             betweens=[]
             for method in methods:
@@ -203,12 +223,17 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #convergence()
-    MC_methods=["IS","PDIS","SIS (Lift states)","SIS (Covariance testing)","SIS (Q-based)","INCRIS"]
-    DR_methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
-    #epsilon_c = 0.01 for deterministic
-    #epsilon_q = 1.0 for deterministic
-    variance_test(methods=MC_methods, stochastic=True,store_results=True,tag="MC_methods",scale="linear",epsilon_c=0.01,epsilon_q=1.0,
-                  from_file=True,load_scores=False)
-    variance_test(methods=DR_methods, stochastic=True, store_results=True, tag="DR_methods",scale="log",epsilon_c=0.01,epsilon_q=1.0,
-                  from_file=True,load_scores=False)
+    if args.method == "MC":
+        methods = ["IS", "PDIS", "SIS (Lift states)", "SIS (Covariance testing)", "SIS (Q-based)", "INCRIS"]
+    else:
+        methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
+    if args.stochastic.startswith("stochastic"): # use weighted
+        methods = ["W"+method for method in methods]
+
+    # epsilon_c = 1.0 as maximal bias -- one step error
+    #variance_test(methods=MC_methods, stochastic="stochastic",store_results=True,tag="WMC_methods",scale="linear",epsilon_c=1.0,epsilon_q=1.0,
+    #              max_t=float("inf"),from_file=False,load_scores=False)
+    variance_test(methods=methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
+                  scale="log",epsilon_c=1.0,epsilon_q=1.0,
+                  max_t=float("inf"),trajectories_from_file=True,load_scores=False)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

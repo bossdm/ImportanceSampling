@@ -39,13 +39,19 @@ class One_D_Domain(object):
             else:
                 next = state - action
         return next
+    def next_state_stochastic_closed(self,state, action):
+        next = self.next_state_stochastic(state,action)
+        if next == 0:
+            return state  # do not allow agent to go back outside the lift
+        else:
+            return next
 
     def optimal_policy(self):
         """
         go to the right
         :return:
         """
-        if self.stochastic:  # suboptimal
+        if self.stochastic!="deterministic":  # suboptimal
             policy = [[0.05, 0.95] for i in range(len(self.states))]
         else:   # optimal
             policy = [[0.00, 1.00] for i in range(len(self.states))]
@@ -70,16 +76,24 @@ class One_D_Domain(object):
     def get_true_P(self):
         P = np.zeros((len(self.states),len(self.actions),len(self.states)+1))
         states_coordinates = list(range(-self.bound + 1, self.bound))
-        high_prob = 0.95 if self.stochastic else 1.0
-        low_prob  = 0.05 if self.stochastic else 0.0
+        high_prob = 0.95 if self.stochastic!= "deterministic" else 1.0
+        low_prob  = 0.05 if self.stochastic!= "deterministic" else 0.0
         for s, state in enumerate(states_coordinates):  # go over all non-terminal states
             for a in range(len(self.actions)):
                 if state < 0 and state >= -self.bound + 2:  # lift to the left
                     P[s,a,s-1] = high_prob
                     P[s,a,s+1] = low_prob
+                    if self.stochastic=="stochastic_closed":
+                        if s + 1 == 0:
+                            P[s,a,s+1] == 0
+                            P[s,a,s] = low_prob # stay in lift instead of going to starting point
                 elif state > 0 and state <= self.bound - 2:  # lift to the right
                     P[s, a, s - 1] = low_prob
                     P[s, a, s + 1] = high_prob
+                    if self.stochastic=="stochastic_closed":
+                        if s - 1 == 0:
+                            P[s,a,s-1] == 0
+                            P[s,a,s ] = low_prob # stay in lift instead of going to starting point
                 else:
                     action = +1 if a==1 else -1
                     s_next = s + action
@@ -127,10 +141,16 @@ class One_D_Domain(object):
             action = self.actions[a]
             # print("state ", state)
             # print("action ", action)
-            if self.stochastic:
+            if self.stochastic=="stochastic":
                 next_s = self.next_state_stochastic(state, action)
-            else:
+            elif self.stochastic=="stochastic_closed":
+                next_s = self.next_state_stochastic_closed(state, action)
+                #print(next_s)
+            elif self.stochastic=="deterministic":
                 next_s = self.next_state(state, action)
+            else:
+                raise Exception("need to indicate either stochastic, stochastic_closed, or determistic. Received ",
+                                self.stochastic, " instead")
             next_state_index = self.next_states.index(next_s)
             reward = self.reward_grid[next_state_index]
             # print("reward ", reward)
@@ -140,13 +160,13 @@ class One_D_Domain(object):
                 #print("terminate at ",next_s, " reward ", self.reward_grid[state_index])
                 break
             state = next_s
-
+        #print("end")
         return trajectory, G
     def candidate_statesets(self):
         nonterminal_states=range(len(self.states))
         return list(itertools.combinations(nonterminal_states, 0)) + list(itertools.combinations(nonterminal_states, 1)) + \
-                  list(itertools.combinations(nonterminal_states, 2))
-
+                  list(itertools.combinations(nonterminal_states, 2)) + list(itertools.combinations(nonterminal_states, 3)) + \
+            list(itertools.combinations(nonterminal_states, 4))
     def lift_stateset(self):
         l=[]
         for i in range(-self.bound+1,self.bound): # go over all non-terminal states

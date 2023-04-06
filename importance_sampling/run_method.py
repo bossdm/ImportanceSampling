@@ -3,16 +3,15 @@ from importance_sampling.baselines import *
 from importance_sampling.SIS import *
 from importance_sampling.INCRIS import *
 from importance_sampling.DoublyRobust import *
-
-def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, JiangStyle=False):
+def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, max_t,JiangStyle=False):
     gamma=1.0
     print(method)
     if method == "INCRIS":
-        best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=False)
+        best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=False,max_t=max_t)
         print(best_G)
         return best_G
     elif method == "WINCRIS":
-        best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=True)
+        best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=True,max_t=max_t)
         print(best_G)
         return best_G
     elif method == "PDIS":
@@ -37,14 +36,14 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
         return G
     elif method == "SIS (Covariance testing)":
         S_sets = env.candidate_statesets()
-        print("candidates ", S_sets)
+        #print("candidates ", S_sets)
         best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False,epsilon=epsilon_c)
         G =  SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=False)[0]
         print("G ", G)
         return G
     elif method == "WSIS (Covariance testing)":
         S_sets = env.candidate_statesets()
-        print("candidates ", S_sets)
+        #print("candidates ", S_sets)
         best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True,epsilon=epsilon_c)
         G =  SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True)[0]
         print("G ", G)
@@ -99,7 +98,7 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
         return G
     elif method =="DRSIS (Covariance testing)":
         S_sets = env.candidate_statesets()
-        print("candidates ", S_sets)
+        #print("candidates ", S_sets)
         best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=False,epsilon=epsilon_c)
         w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions, weighted=False,
                                                                  gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False,
@@ -109,7 +108,7 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
         return G
     elif method =="WDRSIS (Covariance testing)":
         S_sets = env.candidate_statesets()
-        print("candidates ", S_sets)
+        #print("candidates ", S_sets)
         best_G, best_s_set = Exhaustive_SIS(trajectories, S_sets, p_e=policy, p_b=behav, weighted=True,epsilon=epsilon_c)
         w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions, weighted=True,
                                                                  gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False,

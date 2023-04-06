@@ -40,10 +40,11 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     # print("Br",np.mean(Br))
     # print("avg A",np.mean(A))
     # print("C", np.mean(C))
+    SW = sum(Bs)
     # if np.abs(np.mean(A) - 1.0) > eps:
-    #     return float("inf"), Br  # never choose these when mean is not close to 1.0
+    #     return float("inf"), Br, SW  # never choose these when mean is not close to 1.0
     MSE = V + C[0, 1] ** 2
-    SW=sum(Bs)
+
     # print(MSE)
     # print(Br)
     # print(SW)

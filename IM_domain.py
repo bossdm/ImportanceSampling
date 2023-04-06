@@ -18,13 +18,13 @@ def convert_trajectories(trajectories):
         sar_trajectories.append(sar_trajectory)
     return sar_trajectories
 
-def get_scores(methods, repetitions, from_file, MC_iterations,env,p_b_agent,policy,behav,epsilon_c,epsilon_q):
+def get_scores(methods, repetitions, trajectories_from_file, MC_iterations,env,p_b_agent,policy,behav,epsilon_c,epsilon_q,max_t):
     scores = {}
     for method in methods:
         scores[method] = []
     for run in range(repetitions):
         print("doing run ", run)
-        if from_file:
+        if trajectories_from_file:
             trajectories = pickle.load(open("IM_trajectories/run" + str(run) + ".pkl", "rb"))
             trajectories = trajectories[:MC_iterations]
         else:
@@ -34,13 +34,13 @@ def get_scores(methods, repetitions, from_file, MC_iterations,env,p_b_agent,poli
             pickle.dump(trajectories, open("IM_trajectories/run" + str(run) + ".pkl", "wb"))
         H = max([len(traj) for traj in trajectories])
         for method in methods:
-            score = run_method(env, method, trajectories, policy, behav, H, epsilon_c, epsilon_q)
+            score = run_method(env, method, trajectories, policy, behav, H, epsilon_c, epsilon_q, max_t)
             scores[method].append(score)
     return scores
-def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file,load_scores):
+def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectories_from_file,load_scores):
     check_folder("IM_trajectories/")
     S=10
-    MC_iterations_list = [100] #[100,1000]
+    MC_iterations_list = [100,1000] #[100,1000]
     resultsfolder = "IM_results/"  # results folder
     check_folder(resultsfolder)
     repetitions=50
@@ -55,7 +55,6 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file,load_s
     p_e_agent = set_agent(args, env)
     p_e_agent.load_from_path("stored_policies/")
     policy = [p_e_agent.pi.select_action([i], deterministic=False)[2] for i in range(S)]  # third element
-    gamma = 1.0
     _Q, _V, eval_score = compute_value(env.get_true_d0(), env.get_true_P(), env.get_true_R(), env.gamma, env.states,
                                        env.actions,
                                        H=env.stepsPerEpisode,
@@ -76,11 +75,11 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,from_file,load_s
             scores = pickle.load(open(scorefile, "rb"))
             print("loaded scores ", scores)
         else:
-            scores = get_scores(methods, repetitions, from_file, MC_iterations, env, p_b_agent, policy, behav, epsilon_c,
-                       epsilon_q)
+            scores = get_scores(methods, repetitions, trajectories_from_file, MC_iterations, env, p_b_agent, policy, behav, epsilon_c,
+                       epsilon_q, max_t)
             pickle.dump(scores,open(scorefile, "wb"))
 
-        #add MSEs]
+        #add MSEs
         for method in methods:
             MSE = np.mean([(score - eval_score)**2 for score in scores[method]])
             MSEs[method].append(MSE / eval_score**2) # divide by maximum for interpretability
@@ -106,6 +105,9 @@ if __name__ == '__main__':
     #convergence()
     MC_methods=["WIS","WPDIS","WSIS (Covariance testing)","WSIS (Q-based)","WINCRIS"]
     DR_methods = ["WDR","WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    variance_test(methods=MC_methods, store_results=True,tag="MC_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True,load_scores=True)
-    variance_test(methods=DR_methods, store_results=True, tag="DR_methods", epsilon_c=20.0,epsilon_q=25.0,from_file=True,load_scores=True)
+    # epsilon_c = 50.0  (maximal bias)
+    #variance_test(methods=MC_methods, store_results=True,tag="final_MC_methods", epsilon_c=50.0,epsilon_q=50.0,max_t=10,
+    #              trajectories_from_file=True,load_scores=False)
+    variance_test(methods=DR_methods, store_results=True, tag="final_DR_methods", epsilon_c=50.0,epsilon_q=50.0,max_t=10,
+                  trajectories_from_file=True,load_scores=False)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
