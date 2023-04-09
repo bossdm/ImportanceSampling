@@ -14,10 +14,38 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
         best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=True,max_t=max_t)
         print(best_G)
         return best_G
+    elif method == "SINCRIS":
+        w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions,
+                                                                 weighted=False,
+                                                                 gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False)
+        S_A = get_Q_negligible_states(epsilon_q, env.states, env.actions, hat_q)
+        best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=False,max_t=max_t,negligible_states=S_A)
+        print(best_G)
+        return best_G
+    elif method == "WSINCRIS":
+        w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions,
+                                                                 weighted=True,
+                                                                 gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False)
+        S_A = get_Q_negligible_states(epsilon_q, env.states, env.actions, hat_q)
+        best_G, best_ks = INCRIS(trajectories, p_e=policy, p_b=behav, H=H, weighted=True,max_t=max_t,negligible_states=S_A)
+        print(best_G)
+        return best_G
     elif method == "PDIS":
         return PDIS(trajectories, p_e=policy, p_b=behav)[-1]
     elif method == "WPDIS":
         return WPDIS(trajectories, p_e=policy, p_b=behav)
+    elif method == "SPDIS":
+        w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions,
+                                                                 weighted=False,
+                                                                 gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False)
+        S_A = get_Q_negligible_states(epsilon_q, env.states, env.actions, hat_q)
+        return PDIS(trajectories, p_e=policy, p_b=behav,negligible_states=S_A)[-1]
+    elif method == "WSPDIS":
+        w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions,
+                                                                 weighted=True,
+                                                                 gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False)
+        S_A = get_Q_negligible_states(epsilon_q, env.states, env.actions, hat_q)
+        return WPDIS(trajectories, p_e=policy, p_b=behav,negligible_states=S_A)
     elif method == "IS":
         return IS(trajectories, p_e=policy, p_b=behav)[-1]
     elif method == "WIS":
@@ -48,7 +76,7 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
         G =  SIS(trajectories, best_s_set, p_e=policy, p_b=behav, weighted=True)[0]
         print("G ", G)
         return G
-    elif method == "SIS (Q-based)":
+    elif method == "SIS (Q-based)" or method == "SIS":
         w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions,
                                                                  weighted=False,
                                                                  gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False)
@@ -57,7 +85,7 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
                            weighted=False)[0]
         print("G ", G)
         return G
-    elif method == "WSIS (Q-based)":
+    elif method == "WSIS (Q-based)" or method == "WSIS":
         w, rmin, rmax, d0, P, R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions,
                                                                  weighted=False,
                                                                  gamma=gamma, p_e=policy, p_b=behav, JiangStyle=False)
@@ -116,7 +144,7 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
         G = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
         print("G ", G)
         return G
-    elif method =="DRSIS (Q-based)":
+    elif method =="DRSIS (Q-based)" or method == "DRSIS":
         _w, _rmin, _rmax, _d0, _P, _R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions, weighted=False, gamma=gamma, p_e=policy, p_b=behav, JiangStyle=JiangStyle)
         S_A = get_Q_negligible_states(epsilon=epsilon_q, states=env.states, actions=env.actions, Q=hat_q)
         print("state set ", S_A)
@@ -125,7 +153,7 @@ def run_method(env, method,trajectories, policy,behav, H, epsilon_c, epsilon_q, 
         G = DoublyRobust(trajectories, gamma, p_e=policy, p_b=behav, w=w, hat_q=hat_q, hat_v=hat_v)
         print("G ", G)
         return G
-    elif method =="WDRSIS (Q-based)":
+    elif method =="WDRSIS (Q-based)" or method == "WDRSIS":
         _w, _rmin, _rmax, _d0, _P, _R, hat_q, hat_v, hat_G = get_model(trajectories, H, env.states, env.actions, weighted=True, gamma=gamma, p_e=policy, p_b=behav, JiangStyle=JiangStyle)
         S_A = get_Q_negligible_states(epsilon=epsilon_q, states=env.states, actions=env.actions, Q=hat_q)
         print("state set ", S_A)

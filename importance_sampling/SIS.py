@@ -85,8 +85,8 @@ def SIS(trajectories,Ss,p_e,p_b,weighted=False):
         E_G = np.mean(Br)
     scores.append(E_G)
     return scores
-
-# def Exhaustive_SPDIS(trajectories,S_sets,p_e,p_b,period=float("inf")):
+#
+# def Exhaustive_SPDIS(trajectories,S_sets,p_e,p_b,H,max_t=10):
 #     """
 #     exhaustively search for the best drop across sets of SA-pairs
 #     :param trajectories:
@@ -103,22 +103,7 @@ def SIS(trajectories,Ss,p_e,p_b,weighted=False):
 #         Brs = []
 #         rs = []
 #         for i, trajectory in enumerate(trajectories):
-#             # variance is the fluctuation in frequency of SAs between trajectories
-#             A = 0 #
-#             Br = 0 #
-#             for t in range(1,len(trajectory)+1):
-#                 A_temp = 1
-#                 B_temp = 1
-#                 G_temp = trajectory[t-1][2]
-#                 for (s,a,r) in trajectory[0:t]:
-#                     ro = p_e[s][a]/p_b[s][a]
-#                     # lefthand side term: variance is based on fluctuations in how often the set of SA-pairs occurs, this can be known from the trajectories
-#                     if s in Ss:     # random variable
-#                         A_temp*=ro
-#                     else:
-#                         B_temp*=ro
-#                 A+=A_temp
-#                 Br+=B_temp*G_temp
+#
 #             As.append(A)
 #             Brs.append(Br)
 #             #rs.append(G_temp)
@@ -135,10 +120,6 @@ def SIS(trajectories,Ss,p_e,p_b,weighted=False):
 #         print("C=", C)
 #         hatA = np.mean(As)
 #         print("hatA=",hatA)
-#         if hatA > 2 or hatA < 0.50:  # don't consider these
-#             continue
-#         if C >= V:  # don't consider these
-#             continue
 #         if MSE < best_MSE:
 #             best_MSE = MSE
 #             best_s_set = Ss
@@ -147,7 +128,24 @@ def SIS(trajectories,Ss,p_e,p_b,weighted=False):
 #     print("best_state_set",best_s_set)
 #     return best_G, best_s_set
 
-
+# def SPDIS(trajectories,Ss,p_e,p_b,H,max_t=10,weighted=False):
+#     """
+#     SIS for a particular given state-set
+#     :param trajectories:
+#     :param SAs:
+#     :param p_e:
+#     :param p_b:
+#     :param period:
+#     :return:
+#     """
+#
+#     As,Bs,rs,Br,SW,scores = get_SPDIS_estimate(trajectories, p_e, p_b, Ss, H, max_t, weighted)
+#     if weighted:
+#         E_G = np.sum(Br) / SW
+#     else:
+#         E_G = np.mean(Br)
+#     scores.append(E_G)
+#     return scores
 
 # def Exhaustive_SAIS(trajectories,SA_sets,p_e,p_b,period=float("inf")):
 #     """

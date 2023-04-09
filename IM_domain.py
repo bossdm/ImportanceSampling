@@ -4,6 +4,7 @@ from RCMDP_Benchmarks.InventoryManagement import InventoryManagement,args
 from RCMDP.agent.agent_env_loop import agent_env_loop
 from RCMDP.agent.set_agent import RandomAgent, set_agent
 from RCMDP.Utils import check_folder
+from one_D_domain import print_MSE_rows
 import pickle
 
 import numpy as np
@@ -84,11 +85,23 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectori
             MSE = np.mean([(score - eval_score)**2 for score in scores[method]])
             MSEs[method].append(MSE / eval_score**2) # divide by maximum for interpretability
         if store_results:
-            markers={"WIS": "x","WPDIS":"o","SIS (Lift states)":"s","WSIS (Covariance testing)":"D","WSIS (Q-based)": "v","WINCRIS":"^",
-                     "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v"}
-            colors={"WIS": "tab:blue","WPDIS":"tab:orange","WSIS (Lift states)":"tab:green","WSIS (Covariance testing)":"tab:red","WSIS (Q-based)": "tab:purple","WINCRIS":"tab:brown",
-                    "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red", "WDRSIS (Q-based)": "tab:purple"}
-
+            markers={"IS": "x","PDIS":"o","SIS (Lift states)":"s","SIS (Covariance testing)":"D","SIS (Q-based)": "v",
+                     "SIS": "v", "INCRIS":"^",
+                     "DR": "x", "DRSIS (Lift states)": "s", "DRSIS (Covariance testing)": "D", "DRSIS (Q-based)": "v",
+                     "WIS": "x", "WPDIS": "o", "WSIS (Lift states)": "s", "WSIS (Covariance testing)": "D",
+                     "WSIS (Q-based)": "v", "WINCRIS": "^",
+                     "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v",
+                     "SPDIS":"v", "WSPDIS":"v", "SINCRIS":"v", "WSINCRIS":"v"
+                     }
+            colors={"IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
+                    "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
+                     "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red", "DRSIS (Q-based)": "tab:purple",
+                    "WIS": "tab:blue", "WPDIS": "tab:orange", "WSIS (Lift states)": "tab:green",
+                    "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple", "WINCRIS": "tab:brown",
+                    "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green", "WDRSIS (Covariance testing)": "tab:red",
+                    "WDRSIS (Q-based)": "tab:purple",
+                    "SPDIS": "tab:green", "WSPDIS": "tab:red", "SINCRIS": "tab:purple", "WSINCRIS": "tab:brown"
+                    }
             # table
             writefile=open(resultsfolder+"variance_test_IM_"+str(MC_iterations)+tag+".txt","w")
             for method in methods:
@@ -97,28 +110,19 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectori
                 writefile.write("& ")
             writefile.write("\n" )
             MSEList = [MSEs[method][-1] for method in methods]
-            SortedMSEList = sorted(MSEList)
-            best_MSE = SortedMSEList[0]
-            for index, MSE in enumerate(MSEList):
-                r = SortedMSEList.index(MSE)
-                if r == 0:
-                    writefile.write(r"& \underline{\textbf{%.4f}} " % (MSEList[index]))
-                elif r == 1:
-                    if MSEList[index] == best_MSE:  # tie
-                        writefile.write(r"& \underline{\textbf{%.4f}} " % (MSEList[index]))
-                    else:  # second performance
-                        writefile.write(r"& \textbf{%.4f} " % (MSEList[index]))
-                else:
-                    writefile.write(r"& %.4f " % (MSEList[index]))
+            print_MSE_rows(MSEList, writefile)
             writefile.write("\n")
             writefile.close()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     #convergence()
-    MC_methods=["WIS","WPDIS","WSIS (Covariance testing)","WSIS (Q-based)","WINCRIS"]
-    DR_methods = ["WDR","WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    variance_test(methods=MC_methods, store_results=True,tag="final_MC_methods_eps0.01_cardinality2", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
-                  trajectories_from_file=True,load_scores=True)
-    variance_test(methods=DR_methods, store_results=True, tag="final_DR_methods_eps0.01_cardinality2", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
-                  trajectories_from_file=True,load_scores=True)
+    # MC_methods=["WIS","WPDIS","WSIS (Covariance testing)","WSIS (Q-based)","WINCRIS"]
+    # DR_methods = ["WDR","WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
+    # methods = ["SPDIS", "WSPDIS", "SINCRIS", "WSINCRIS"]
+    all_methods = ["IS", "SIS", "PDIS", "SPDIS", "INCRIS", "SINCRIS"]  # SIS variants use Q-based identification
+    weighted_all_methods = ["W" + method for method in all_methods]
+    variance_test(methods=weighted_all_methods, store_results=True,tag="WEIGHTED_ALL", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
+                  trajectories_from_file=True,load_scores=False)
+    #variance_test(methods=DR_methods, store_results=True, tag="final_DR_methods_eps0.01_cardinality2", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
+    #              trajectories_from_file=True,load_scores=True)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

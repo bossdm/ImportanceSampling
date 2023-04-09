@@ -51,7 +51,7 @@ def WIS(trajectories,p_e,p_b,period=float("inf")):
     print("WIS ", scores[-1])
     return scores
 
-def PDIS(trajectories,p_e,p_b,period=float("inf")):
+def PDIS(trajectories,p_e,p_b,negligible_states=[],period=float("inf")):
     E_G = 0
     scores=[]
     for i, trajectory in enumerate(trajectories):
@@ -60,10 +60,12 @@ def PDIS(trajectories,p_e,p_b,period=float("inf")):
             importance_prod = 1
             if p_e is None and p_b is None:
                 for (s,a,r,rho) in trajectory[0:t]:
-                    importance_prod = importance_prod * rho
+                    if s not in negligible_states:
+                        importance_prod = importance_prod * rho
             else:
                 for (s,a,r) in trajectory[0:t]:
-                    importance_prod = importance_prod * p_e[s][a]/p_b[s][a]
+                    if s not in negligible_states:
+                        importance_prod = importance_prod * p_e[s][a]/p_b[s][a]
             # use the last r
             G += importance_prod * r
         E_G+=G
@@ -73,7 +75,7 @@ def PDIS(trajectories,p_e,p_b,period=float("inf")):
     print("PDIS ",scores[-1])
     return scores
 #
-def WPDIS(trajectories, p_e, p_b, period=float("inf")):
+def WPDIS(trajectories, p_e, p_b, negligible_states=[],period=float("inf")):
     ro_cum = np.ones(shape=(len(trajectories),)) # cumulant vector for ro_t
     r_t = np.zeros(shape=(len(trajectories),))  # cumulant vector for ro_t
     E_G =  0
@@ -92,7 +94,8 @@ def WPDIS(trajectories, p_e, p_b, period=float("inf")):
                 else:
                     s,a,r = traj[t]
                     ro = p_e[s][a] / p_b[s][a]
-                ro_cum[i] *= ro
+                if s not in negligible_states:
+                    ro_cum[i] *= ro
         SW = np.sum(ro_cum)
         for i in range(len(trajectories)):
             traj = trajectories[i]

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def get_A_B_r(k,t,trajectory,p_e,p_b):
+def get_A_B_r(k,t,trajectory,p_e,p_b,negligible_states):
     if t >= len(trajectory) :  # do not include terminal state TODO: what is done here?
         return 1, 1, 0
     else:
@@ -11,18 +11,24 @@ def get_A_B_r(k,t,trajectory,p_e,p_b):
             for (s, a, r, ro) in trajectory[0:t - k]:
                 A *= ro
             for (s, a, r, ro) in trajectory[t - k:t+1]:
-                B *= ro
+                if s in negligible_states:
+                    A*=ro
+                else:
+                    B *= ro
         else:
             for (s, a, r) in trajectory[0:t - k]:
                 ro = p_e[s][a] / p_b[s][a]
                 A *=  ro
             for (s, a, r) in trajectory[t - k:t+1]:
                 ro = p_e[s][a] / p_b[s][a]
-                B *= ro
+                if s in negligible_states:
+                    A *= ro
+                else:
+                    B *= ro
 
         return A, B, r  # takes the very last reward (r_t)
 
-def get_MSE(k,t,trajectories,p_e,p_b):
+def get_MSE(k,t,trajectories,p_e,p_b,negligible_states):
     eps = 0.05
     # empty list for new k
     As = []
@@ -30,7 +36,7 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     rs = []
     # k < t
     for i, trajectory in enumerate(trajectories):
-        A, B, r = get_A_B_r(k, t, trajectory, p_e, p_b)
+        A, B, r = get_A_B_r(k, t, trajectory, p_e, p_b,negligible_states)
         As.append(A)
         Bs.append(B)
         rs.append(r)
@@ -49,7 +55,7 @@ def get_MSE(k,t,trajectories,p_e,p_b):
     # print(Br)
     # print(SW)
     return MSE, Br, SW
-def INCRIS(trajectories,p_e,p_b,H,max_t=10,weighted=False):
+def INCRIS(trajectories,p_e,p_b,H,max_t=10,weighted=False,negligible_states=[]):
     """
     exhaustively search for the best drop across sets of SA-pairs
     :param trajectories:
@@ -66,7 +72,7 @@ def INCRIS(trajectories,p_e,p_b,H,max_t=10,weighted=False):
         best_MSE = float("inf")
         best_k = None
         for k in range(0,min(max_t,t+1)): # loop over possible k
-            MSE, Br, SW = get_MSE(k, t, trajectories,p_e,p_b)
+            MSE, Br, SW = get_MSE(k, t, trajectories,p_e,p_b,negligible_states)
             if MSE < best_MSE:
                 best_k = k
                 best_MSE = MSE
