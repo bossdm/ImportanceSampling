@@ -13,14 +13,14 @@ def Exhaustive_SIS(trajectories,S_sets,p_e,p_b,weighted=False,epsilon=0.01):
     :return:
     """
     epsilon_s = 0.01
-    writefile=open("SIS_log.txt","w")
-    writefile.write("S^A \t G \t V \t C \t hatA\n")
+    #writefile=open("SIS_log.txt","w")
+    #writefile.write("S^A \t G \t V \t C \t hatA\n")
     best_setsize=-1
     best_MSE = float("inf")
     for Ss in S_sets:
         As, Bs, rs, Br, SW, scores = get_SIS_estimate(trajectories, p_e, p_b, Ss, weighted, period=float("inf"))
         G, MSE, hatA, C, V = get_MSE(As, Br, weighted, SW)
-        writefile.write(str(Ss) + "\t" + str(G) + "\t" + str(V) + "\t" + str(C[0, 1]) + "\t" + str(hatA) + "\n")
+        #writefile.write(str(Ss) + "\t" + str(G) + "\t" + str(V) + "\t" + str(C[0, 1]) + "\t" + str(hatA) + "\n")
         # writefile.write(str(Ss) + "\t" + str(G) + "\t" + str(V) + "\t" + str(C[0,1]) + "\t" + str(hatA) + "\n")
         # if hatA > (1 + epsilon) or hatA < (1 - epsilon):  # don't consider these
         #     continue

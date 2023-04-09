@@ -108,8 +108,6 @@ def get_model(trajectories, H, states, actions, weighted,gamma, p_e,p_b,JiangSty
     return w, rmin, rmax, d0, P, R, hat_q, hat_v,hat_G
 
 def DoublyRobust(trajectories, gamma, p_e, p_b, w, hat_q, hat_v):
-
-
     G = 0
     n=len(trajectories)
     for i,traj in enumerate(trajectories):

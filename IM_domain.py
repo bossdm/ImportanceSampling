@@ -96,8 +96,20 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectori
             for method in methods:
                 writefile.write("& ")
             writefile.write("\n" )
-            for method in methods:
-                writefile.write("& %.4f "%(MSEs[method][-1]))
+            MSEList = [MSEs[method][-1] for method in methods]
+            SortedMSEList = sorted(MSEList)
+            best_MSE = SortedMSEList[0]
+            for index, MSE in enumerate(MSEList):
+                r = SortedMSEList.index(MSE)
+                if r == 0:
+                    writefile.write(r"& \underline{\textbf{%.4f}} " % (MSEList[index]))
+                elif r == 1:
+                    if MSEList[index] == best_MSE:  # tie
+                        writefile.write(r"& \underline{\textbf{%.4f}} " % (MSEList[index]))
+                    else:  # second performance
+                        writefile.write(r"& \textbf{%.4f} " % (MSEList[index]))
+                else:
+                    writefile.write(r"& %.4f " % (MSEList[index]))
             writefile.write("\n")
             writefile.close()
 # Press the green button in the gutter to run the script.
@@ -105,9 +117,8 @@ if __name__ == '__main__':
     #convergence()
     MC_methods=["WIS","WPDIS","WSIS (Covariance testing)","WSIS (Q-based)","WINCRIS"]
     DR_methods = ["WDR","WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    # epsilon_c = 50.0  (maximal bias)
-    #variance_test(methods=MC_methods, store_results=True,tag="final_MC_methods", epsilon_c=50.0,epsilon_q=50.0,max_t=10,
-    #              trajectories_from_file=True,load_scores=False)
-    variance_test(methods=DR_methods, store_results=True, tag="final_DR_methods", epsilon_c=50.0,epsilon_q=50.0,max_t=10,
-                  trajectories_from_file=True,load_scores=False)
+    variance_test(methods=MC_methods, store_results=True,tag="final_MC_methods_eps0.01_cardinality2", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
+                  trajectories_from_file=True,load_scores=True)
+    variance_test(methods=DR_methods, store_results=True, tag="final_DR_methods_eps0.01_cardinality2", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
+                  trajectories_from_file=True,load_scores=True)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

@@ -216,11 +216,24 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
             writefile.write("\n" )
             for idx, size in enumerate(sizes):
                 writefile.write("%d " % (size,))
-                for method in methods:
-                    writefile.write("& %.4f "%(MSEs[method][idx]))
+                MSEList = [MSEs[method][idx] for method in methods]
+                SortedMSEList = sorted(MSEList)
+                best_MSE = SortedMSEList[0]
+                for index,MSE in enumerate(MSEList):
+                    r = SortedMSEList.index(MSE)
+                    if r == 0:
+                        writefile.write(r"& \underline{\textbf{%.4f}} "%(MSEList[index]))
+                    elif r == 1:
+                        if MSEList[index] == best_MSE:  # tie
+                            writefile.write(r"& \underline{\textbf{%.4f}} " % (MSEList[index]))
+                        else:   # second performance
+                            writefile.write(r"& \textbf{%.4f} " % (MSEList[index]))
+                    else:
+                        writefile.write(r"& %.4f " % (MSEList[index]))
+
                 writefile.write("\n")
             writefile.close()
-# Press the green button in the gutter to run the script.
+
 if __name__ == '__main__':
     #convergence()
     if args.method == "MC":
@@ -230,10 +243,6 @@ if __name__ == '__main__':
     if args.stochastic.startswith("stochastic"): # use weighted
         methods = ["W"+method for method in methods]
 
-    # epsilon_c = 1.0 as maximal bias -- one step error
-    #variance_test(methods=MC_methods, stochastic="stochastic",store_results=True,tag="WMC_methods",scale="linear",epsilon_c=1.0,epsilon_q=1.0,
-    #              max_t=float("inf"),from_file=False,load_scores=False)
     variance_test(methods=methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
-                  scale="log",epsilon_c=1.0,epsilon_q=1.0,
-                  max_t=float("inf"),trajectories_from_file=True,load_scores=False)
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+                  scale="log",epsilon_c=0.01,epsilon_q=1.0,
+                  max_t=float("inf"),trajectories_from_file=True,load_scores=True)

@@ -165,8 +165,7 @@ class One_D_Domain(object):
     def candidate_statesets(self):
         nonterminal_states=range(len(self.states))
         return list(itertools.combinations(nonterminal_states, 0)) + list(itertools.combinations(nonterminal_states, 1)) + \
-                  list(itertools.combinations(nonterminal_states, 2)) + list(itertools.combinations(nonterminal_states, 3)) + \
-            list(itertools.combinations(nonterminal_states, 4))
+                  list(itertools.combinations(nonterminal_states, 2))
     def lift_stateset(self):
         l=[]
         for i in range(-self.bound+1,self.bound): # go over all non-terminal states
