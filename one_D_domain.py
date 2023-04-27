@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(
                     description = 'run RL on a one D problem with lift states')
 parser.add_argument('--method', dest='method',type=str,default="MC") #MC or DR
 parser.add_argument('--stochastic', dest='stochastic',type=str,default="deterministic") # deterministic or stochastic
-parser.add_argument('--tag',dest="tag",type=str,default="ALL_METHODS") #
+parser.add_argument('--tag',dest="tag",type=str,default="SIS_METHODS") #
 parser.add_argument('--load_scores',dest="load_scores",type=bool)
 
 args = parser.parse_args()
@@ -153,7 +153,7 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
     check_folder(folder)
     resultsfolder = "1D" + stoch_string + "_results/" # results folder
     check_folder(resultsfolder)
-    MC_iterations_list = [100,1000]
+    MC_iterations_list = [1000]
     repetitions=200 if stochastic!="deterministic" else 50
     sizes=[7,9,11,13,15,17]
 
@@ -200,7 +200,7 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
                     "WINCRIS": "^",
                      "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v",
                      "WDRSIS": "v",
-                     "SPDIS":"v", "WSPDIS":"v", "SINCRIS":"v", "WSINCRIS":"v"
+                     "SPDIS":"v", "WSPDIS":"v", "SINCRIS":"D", "WSINCRIS":"D"
                      }
             colors={"IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
                     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
@@ -211,7 +211,7 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
                     "WINCRIS": "tab:brown", "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green",
                     "WDRSIS (Covariance testing)": "tab:red",
                     "WDRSIS (Q-based)": "tab:purple", "WDRSIS": "tab:purple",
-                    "SPDIS": "tab:green", "WSPDIS": "tab:red", "SINCRIS": "tab:purple", "WSINCRIS": "tab:brown"
+                    "SPDIS": "tab:green", "WSPDIS": "tab:red", "SINCRIS": "tab:grey", "WSINCRIS": "tab:grey"
                     }
 
             lines=[]
@@ -253,14 +253,14 @@ if __name__ == '__main__':
     #     methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
     # if args.stochastic.startswith("stochastic"): # use weighted
     #     methods = ["W"+method for method in methods]
-    SIS_methods = ["SIS", "SIS (Lift states)", "SIS (Covariance testing)", "SIS (Q-based)"]
-    WSIS_methods = ["WSIS", "WSIS (Lift states)", "WSIS (Covariance testing)", "WSIS (Q-based)"]
+    SIS_methods = ["IS", "SIS (Lift states)", "SIS (Covariance testing)", "SIS (Q-based)"]
+    WSIS_methods = ["WIS", "WSIS (Lift states)", "WSIS (Covariance testing)", "WSIS (Q-based)"]
     DRSIS_methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
     WDRSIS_methods = ["WDR", "WDRSIS (Lift states)", "WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
     all_methods = ["IS","SIS","PDIS","SPDIS","INCRIS","SINCRIS"] # SIS variants use Q-based identification
     weighted_all_methods = ["W"+method for method in all_methods]
 
 
-    variance_test(methods=all_methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
+    variance_test(methods=SIS_methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
                   scale="log",epsilon_c=0.01,epsilon_q=1.0,
                   max_t=float("inf"),trajectories_from_file=True,load_scores=False)
