@@ -19,7 +19,7 @@ expected return.
 For the most recent paper on state-based importance sampling, which also uses this code, please see:
 
 David M. Bossens & Philip S. Thomas (2024). Low Variance Off-policy Evaluation with State-based Importance Sampling. 
-https://arxiv.org/pdf/2212.03932v4.pdf 
+https://arxiv.org/abs/2212.03932
 
 
 There are currently three scripts:
