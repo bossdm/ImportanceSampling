@@ -27,11 +27,15 @@ def get_DR_params(trajectories,H,weighted,p_e,p_b,negligible_states=[]):
                 if r > r_max:
                     r_max = r
     for t in range(H):
-        if  weighted:
-            s = sum(ro_product[t,:])
-            w[t,:] = ro_product[t,:] / s
+        if sum(ro_product[t, :]) == 0:
+            #print("warning: ro_t=0")
+            w[t, :] = 0
         else:
-            w[t,:] = ro_product[t,:] / n
+            if  weighted:
+                s = sum(ro_product[t,:])
+                w[t,:] = ro_product[t,:] / s
+            else:
+                w[t,:] = ro_product[t,:] / n
     #print(w)
     return w, r_min, r_max
 

@@ -1,17 +1,19 @@
 from importance_sampling.run_method import run_method
 from importance_sampling.compute_value import compute_value
+from envs.one_D_domain import One_D_Domain
+from utils import print_MSE_rows
 import matplotlib.pyplot as plt
-from envs.one_D_domain import *
 import pickle
 from RCMDP.Utils import check_folder
 import argparse
+import numpy as np
 
 parser = argparse.ArgumentParser(
                     prog = 'One D domain',
                     description = 'run RL on a one D problem with lift states')
 parser.add_argument('--method', dest='method',type=str,default="MC") #MC or DR
 parser.add_argument('--stochastic', dest='stochastic',type=str,default="deterministic") # deterministic or stochastic
-parser.add_argument('--tag',dest="tag",type=str,default="SIS_METHODS") #
+parser.add_argument('--tag',dest="tag",type=str,default="") #
 parser.add_argument('--load_scores',dest="load_scores",type=bool)
 
 args = parser.parse_args()
@@ -83,19 +85,7 @@ args = parser.parse_args()
 #     line4, = plt.plot(x, INCRIS_scores, marker="^")
 #     plt.legend([line1, line2, line3, line4], ["IS", "PDIS", "SIS", "INCRIS"])
 #     plt.savefig("convergence.pdf")
-def print_MSE_rows(MSEList,writefile):
-    SortedMSEList = sorted(MSEList)
-    best_MSE = SortedMSEList[0]
-    for index, MSE in enumerate(MSEList):
-        r = SortedMSEList.index(MSE)
-        if r == 0:
-            writefile.write(r"& \underline{\textbf{%.4f}} " % (MSEList[index]))
-        elif MSEList[index] == best_MSE:  # underline all ties
-            writefile.write(r"& \underline{\textbf{%.4f}} " % (MSEList[index]))
-        elif r == 1:  # second performance (in case no tie)
-            writefile.write(r"& \textbf{%.4f} " % (MSEList[index]))
-        else:
-            writefile.write(r"& %.4f " % (MSEList[index]))
+
 def get_method_scores(sizes,MC_iterations,stochastic,methods,repetitions,folder, trajectories_from_file,epsilon_c,epsilon_q, max_t):
     scores = {}
     for method in methods:
@@ -151,10 +141,10 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
     stoch_string = "_"+stochastic if stochastic != "deterministic" else ""
     folder="1D"+stoch_string+"_trajectories/" # trajectory folder
     check_folder(folder)
-    resultsfolder = "1D" + stoch_string + "_results/" # results folder
+    resultsfolder = "1D" + stoch_string + "_results_NEW/" # results folder
     check_folder(resultsfolder)
     MC_iterations_list = [1000]
-    repetitions=200 if stochastic!="deterministic" else 50
+    repetitions= 200 if stochastic!="deterministic" else 50
     sizes=[7,9,11,13,15,17]
 
     for MC_iterations in MC_iterations_list:
@@ -167,9 +157,20 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
             score_u[method] = [[] for i in sizes]
             score_m[method] = [[] for i in sizes]
             MSEs[method] = []
-        scorefile = resultsfolder+"variance_test_"+str(MC_iterations)+stoch_string+tag+ "_scores.pkl"
+
         if load_scores:
+            # tag= "SIS_METHODS"
+            # scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
+            # SIS_scores, eval_score = pickle.load(open(scorefile,"rb"))
+            # tag = "final_DR_methods_eps0.01cardinality2"
+            # scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
+            # DR_scores, eval_score = pickle.load(open(scorefile,"rb"))
+            # scores = {**SIS_scores, **DR_scores}
+            tag = "SIS_METHODS"
+            scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
+            # pickle.dump((scores, eval_score), open(scorefile, "wb"))
             scores, eval_score = pickle.load(open(scorefile,"rb"))
+            #scores["WDRSIS"] = scores["WDRSIS (Q-based)"]
             print("loaded scores ", scores)
             print("loaded eval score ", eval_score)
         else:
@@ -190,41 +191,67 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
                 MSE = np.mean([(score - eval_score)**2 for score in scores[method][idx]])
                 MSEs[method].append(MSE)
         if store_results:
-            markers={"IS": "x","PDIS":"o","SIS (Lift states)":"s","SIS (Covariance testing)":"D","SIS (Q-based)": "v",
-                     "SIS": "v",
-                     "INCRIS":"^",
-                     "DR": "x", "DRSIS (Lift states)": "s", "DRSIS (Covariance testing)": "D", "DRSIS (Q-based)": "v",
-                     "DRSIS": "v",
-                     "WIS": "x", "WPDIS": "o", "WSIS (Lift states)": "s", "WSIS (Covariance testing)": "D",
-                     "WSIS (Q-based)": "v", "WSIS": "v",
-                    "WINCRIS": "^",
-                     "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v",
-                     "WDRSIS": "v",
-                     "SPDIS":"v", "WSPDIS":"v", "SINCRIS":"D", "WSINCRIS":"D"
+            markers={ # "IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
+                #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
+                #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
+                #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
+                    "IS": "o",
+                    "SIS": "x",
+                    "PDIS": "o",
+                "SPDIS": "x",
+                # "SIS (Lift states)": "tab:green",
+                    #"SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
+
+                    "INCRIS": "o",
+                "SINCRIS": "x",
+                    "DR": "o",
+                    #"DRSIS (Lift states)": "tab:green",
+                    #"DRSIS (Covariance testing)": "tab:red",
+                    #"DRSIS (Q-based)": "tab:purple",
+                   "DRSIS": "x",
+                    #"SPDIS": "tab:green",
+
+                   #"SINCRIS": "tab:grey",
+
+                    "SDRE": "o", "SSDRE": "x",
                      }
-            colors={"IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
-                    "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
-                     "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
-                    "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
-                    "WIS": "tab:blue", "WPDIS": "tab:orange", "WSIS (Lift states)": "tab:green",
-                    "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple","WSIS": "tab:purple",
-                    "WINCRIS": "tab:brown", "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green",
-                    "WDRSIS (Covariance testing)": "tab:red",
-                    "WDRSIS (Q-based)": "tab:purple", "WDRSIS": "tab:purple",
-                    "SPDIS": "tab:green", "WSPDIS": "tab:red", "SINCRIS": "tab:grey", "WSINCRIS": "tab:grey"
+            colors={
+                # "IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
+                #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:bron",
+                #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
+                #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
+                    "IS": "tab:blue",
+                    "SIS": "tab:blue",
+                    "PDIS": "tab:orange",
+                "SPDIS": "tab:orange",
+                # "SIS (Lift states)": "tab:green",
+                    #"SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
+
+                    "INCRIS": "tab:green",
+                "SINCRIS": "tab:green",
+                    "DR": "tab:grey",
+                    #"DRSIS (Lift states)": "tab:green",
+                    #"DRSIS (Covariance testing)": "tab:red",
+                    #"DRSIS (Q-based)": "tab:purple",
+                   "DRSIS": "tab:grey",
+                    #"SPDIS": "tab:green",
+
+                   #"SINCRIS": "tab:grey",
+
+                    "SDRE": "tab:red", "SSDRE": "tab:red",
                     }
 
             lines=[]
             betweens=[]
             for method in methods:
                 line, = plt.plot(sizes,score_m[method],marker=markers[method],color=colors[method],scaley=scale)
-                b = plt.fill_between(sizes,  score_l[method],  score_u[method],alpha=0.25)
+                b = plt.fill_between(sizes,  score_l[method],  score_u[method],color=colors[method],alpha=0.25)
                 lines.append(line)
                 betweens.append(b)
             plt.legend(lines,methods)
 
             plt.xlabel('Domain size')
-            plt.ylabel('Residual ($\hat{G} - G$)')
+            plt.ylabel('Residual ($\hat{G} - \mathcal{G}$)')
             plt.savefig(resultsfolder+"variance_test_"+str(MC_iterations)+tag+".pdf")
 
             plt.close()
@@ -237,6 +264,21 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
             for method in methods:
                 writefile.write("& ")
             writefile.write("\n" )
+            for idx, size in enumerate(sizes):
+                writefile.write("%d " % (size,))
+                MSEList = [MSEs[method][idx] for method in methods]
+                print_MSE_rows(MSEList, writefile)
+                writefile.write("\n")
+            writefile.close()
+
+            # table
+            writefile = open(resultsfolder + "variance_test_vertical_" + str(MC_iterations) + tag + ".txt", "w")
+            for method in methods:
+                writefile.write(r" & " + method)
+            writefile.write("\n \\textbf{Domain size}")
+            for method in methods:
+                writefile.write("& ")
+            writefile.write("\n")
             for idx, size in enumerate(sizes):
                 writefile.write("%d " % (size,))
                 MSEList = [MSEs[method][idx] for method in methods]
@@ -257,10 +299,10 @@ if __name__ == '__main__':
     WSIS_methods = ["WIS", "WSIS (Lift states)", "WSIS (Covariance testing)", "WSIS (Q-based)"]
     DRSIS_methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
     WDRSIS_methods = ["WDR", "WDRSIS (Lift states)", "WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    all_methods = ["IS","SIS","PDIS","SPDIS","INCRIS","SINCRIS"] # SIS variants use Q-based identification
-    weighted_all_methods = ["W"+method for method in all_methods]
+    all_methods = ["IS","SIS","PDIS","SPDIS","INCRIS","SINCRIS","SDRE","SSDRE"] # SIS variants use Q-based identification
+    weighted_all_methods = ["W"+method for method in all_methods if "SDRE" not in method] + [ "SDRE","SSDRE"] + ["WDR", "WDRSIS"]
 
 
-    variance_test(methods=SIS_methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
+    variance_test(methods=all_methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
                   scale="log",epsilon_c=0.01,epsilon_q=1.0,
-                  max_t=float("inf"),trajectories_from_file=True,load_scores=False)
+                  max_t=float("inf"),trajectories_from_file=True,load_scores=True)

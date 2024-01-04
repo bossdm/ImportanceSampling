@@ -47,7 +47,10 @@ def WIS(trajectories,p_e,p_b,period=float("inf")):
         if i > 0 and i % period == 0:
             print(i)
             scores.append(E_G/SW)
-    scores.append(E_G/SW)
+    if SW == 0:
+        scores.append(0)
+    else:
+        scores.append(E_G/SW)
     print("WIS ", scores[-1])
     return scores
 
@@ -97,15 +100,18 @@ def WPDIS(trajectories, p_e, p_b, negligible_states=[],period=float("inf")):
                 if s not in negligible_states:
                     ro_cum[i] *= ro
         SW = np.sum(ro_cum)
-        for i in range(len(trajectories)):
-            traj = trajectories[i]
-            if len(traj) > t:
-                if p_e is None and p_b is None:
-                    s, a, r, ro = traj[t]
-                else:
-                    s, a, r = traj[t]
+        if SW == 0:
+            return 0.0
+        else:
+            for i in range(len(trajectories)):
+                traj = trajectories[i]
+                if len(traj) > t:
+                    if p_e is None and p_b is None:
+                        s, a, r, ro = traj[t]
+                    else:
+                        s, a, r = traj[t]
 
-                E_G += ro_cum[i] / SW  * r
+                    E_G += ro_cum[i] / SW  * r
     print("WPDIS ", E_G)
     return E_G
 # def WPDIS(trajectories,p_e,p_b,period=float("inf")):

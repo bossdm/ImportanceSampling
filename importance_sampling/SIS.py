@@ -44,7 +44,7 @@ def get_Q_negligible_states(epsilon,states,actions,Q):
         is_negligible=True
         for t in range(H):
             for i in range(1,len(actions)):
-                for j in range(i):   #check all pairs
+                for j in range(i):   #check all pair
                     if np.abs(Q[t,s,i] - Q[t,s,j]) >= epsilon:
                         is_negligible=False
                         break

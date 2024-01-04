@@ -4,11 +4,12 @@ from RCMDP_Benchmarks.InventoryManagement import InventoryManagement,args
 from RCMDP.agent.agent_env_loop import agent_env_loop
 from RCMDP.agent.set_agent import RandomAgent, set_agent
 from RCMDP.Utils import check_folder
-from one_D_domain import print_MSE_rows
+from utils import print_MSE_rows
 import matplotlib.pyplot as plt
 import pickle
 import time
 import numpy as np
+import keras.backend as K
 import os
 args.method_name="PG" # evaluation policy comes from training with policy gradient algorithm
 def convert_trajectories(trajectories):
@@ -43,21 +44,22 @@ def get_scores(methods, repetitions, trajectories_from_file, MC_iterations,env,p
 def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectories_from_file,load_scores):
     check_folder("IM_trajectories/")
     S=10
-    MC_iterations_list = [100,250,500,1000]# #[100,1000]
-    resultsfolder = "IM_results/"  # results folder
+    MC_iterations_list = [100] #250,500,1000]# #[100,1000]
+    resultsfolder = "IM_results_NEW/"  # results folder
     check_folder(resultsfolder)
     repetitions=50
     gamma=1.0
     d = np.zeros(1)
     # domain
     env = InventoryManagement(gamma, d, S, using_nextstate=False)  # real samples
+    env.stepsPerEpisode = 1000
     env.stage = "test"
     p_b_agent = RandomAgent(len(env.actions), uncertainty_set=None)
     behav = [[1. / S for a in range(len(env.actions))] for i in range(S)]
     # trained policy
     p_e_agent = set_agent(args, env)
     p_e_agent.load_from_path("stored_policies/")
-    policy = [p_e_agent.pi.select_action([i], deterministic=False)[2] for i in range(S)]  # third element
+    policy = [K.eval(p_e_agent.pi.select_action([i], deterministic=False)[2][0]) for i in range(S)]  # third element
     _Q, _V, eval_score = compute_value(env.get_true_d0(), env.get_true_P(), env.get_true_R(), env.gamma, env.states,
                                        env.actions,
                                        H=env.stepsPerEpisode,
@@ -84,17 +86,32 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectori
     for idx, MC_iterations in enumerate(MC_iterations_list):
         scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + tag + "_scores.pkl"
         if load_scores:
-            try:
-                scores = pickle.load(open(scorefile, "rb"))
-                print("loaded scores from scorefile", scorefile)
-                print(scores)
-                time.sleep(2)
-            except:
-                print("could NOT load scores from scorefile", scorefile)
-                scores = get_scores(methods, repetitions, trajectories_from_file, MC_iterations, env, p_b_agent, policy,
-                                    behav, epsilon_c,
-                                    epsilon_q, max_t)
+            #try:
+                tag= "WEIGHTED_ALL"
+                scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + tag + "_scores.pkl"
+                SIS_scores = pickle.load(open(scorefile,"rb"))
+                # scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
+                tag = "WEIGHTED_DRSIS"
+                scorefile = resultsfolder + "variance_test_" + str(MC_iterations) +  tag + "_scores.pkl"
+                DR_scores = pickle.load(open(scorefile,"rb"))
+                scores = {**SIS_scores, **DR_scores}
+                tag="all"
+                scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + tag + "_scores.pkl"
                 pickle.dump(scores, open(scorefile, "wb"))
+                #scores = pickle.load(open(scorefile, "rb"))
+                scores["WDRSIS"] = scores["WDRSIS (Q-based)"]
+                print("loaded scores ", scores)
+                print("loaded eval score ", eval_score)
+                # scores = pickle.load(open(scorefile, "rb"))
+                # print("loaded scores from scorefile", scorefile)
+                # print(scores)
+                # time.sleep(2)
+            # except:
+            #     print("could NOT load scores from scorefile", scorefile)
+            #     scores = get_scores(methods, repetitions, trajectories_from_file, MC_iterations, env, p_b_agent, policy,
+            #                         behav, epsilon_c,
+            #                         epsilon_q, max_t)
+            #     pickle.dump(scores, open(scorefile, "wb"))
         else:
             scores = get_scores(methods, repetitions, trajectories_from_file, MC_iterations, env, p_b_agent, policy, behav, epsilon_c,
                        epsilon_q, max_t)
@@ -127,42 +144,68 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectori
             print_MSE_rows(MSEList, writefile)
             writefile.write("\n")
         writefile.close()
-        markers = {"IS": "x", "PDIS": "o", "SIS (Lift states)": "s", "SIS (Covariance testing)": "D",
-                   "SIS (Q-based)": "v",
-                   "SIS": "v",
-                   "INCRIS": "^",
-                   "DR": "x", "DRSIS (Lift states)": "s", "DRSIS (Covariance testing)": "D", "DRSIS (Q-based)": "v",
-                   "DRSIS": "v",
-                   "WIS": "x", "WPDIS": "o", "WSIS (Lift states)": "s", "WSIS (Covariance testing)": "D",
-                   "WSIS (Q-based)": "v", "WSIS": "v",
-                   "WINCRIS": "^",
-                   "WDR": "x", "WDRSIS (Lift states)": "s", "WDRSIS (Covariance testing)": "D", "WDRSIS (Q-based)": "v",
-                   "WDRSIS": "v",
-                   "SPDIS": "v", "WSPDIS": "v", "SINCRIS": "D", "WSINCRIS": "D"
-                   }
-        colors = {"IS": "tab:blue", "PDIS": "tab:orange", "SIS (Lift states)": "tab:green",
-                  "SIS (Covariance testing)": "tab:red",
-                  "SIS (Q-based)": "tab:purple", "SIS": "tab:purple", "INCRIS": "tab:brown",
-                  "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
-                  "DRSIS (Q-based)": "tab:purple", "DRSIS": "tab:purple",
-                  "WIS": "tab:blue", "WPDIS": "tab:orange", "WSIS (Lift states)": "tab:green",
-                  "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple", "WSIS": "tab:purple",
-                  "WINCRIS": "tab:brown", "WDR": "tab:blue", "WDRSIS (Lift states)": "tab:green",
-                  "WDRSIS (Covariance testing)": "tab:red",
-                  "WDRSIS (Q-based)": "tab:purple", "WDRSIS": "tab:purple",
-                  "SPDIS": "tab:green", "WSPDIS": "tab:red", "SINCRIS": "tab:grey", "WSINCRIS": "tab:grey"
-                  }
+        markers = {
+            # "IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
+            #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
+            #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
+            #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
+            "WIS": "o",
+            "WSIS": "x",
+            "WPDIS": "o",
+            "WSPDIS": "x",
+            # "WSIS (Lift states)": "tab:green",
+            # "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple",
+
+            "WINCRIS": "o",
+            "WSINCRIS": "x",
+            "WDR": "o",
+            # "WDRSIS (Lift states)": "tab:green",
+            # "WDRSIS (Covariance testing)": "tab:red",
+            # "WDRSIS (Q-based)": "tab:purple",
+            "WDRSIS": "x",
+            # "SPDIS": "tab:green",
+
+            # "SINCRIS": "tab:grey",
+
+            "SDRE": "o", "SSDRE": "x",
+        }
+        colors = {
+            # "IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
+            #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
+            #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
+            #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
+            "WIS": "tab:blue",
+            "WSIS": "tab:blue",
+            "WPDIS": "tab:orange",
+            "WSPDIS": "tab:orange",
+            # "WSIS (Lift states)": "tab:green",
+            # "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple",
+
+            "WINCRIS": "tab:green",
+            "WSINCRIS": "tab:green",
+            "WDR": "tab:grey",
+            # "WDRSIS (Lift states)": "tab:green",
+            # "WDRSIS (Covariance testing)": "tab:red",
+            # "WDRSIS (Q-based)": "tab:purple",
+            "WDRSIS": "tab:grey",
+            # "SPDIS": "tab:green",
+
+            # "SINCRIS": "tab:grey",
+
+            "SDRE": "tab:red", "SSDRE": "tab:red",
+        }
         lines = []
         betweens = []
+        plt.ylim([-500,500])
         for method in methods:
             line, = plt.plot(MC_iterations_list, score_m[method], marker=markers[method], color=colors[method])
-            b = plt.fill_between(MC_iterations_list, score_l[method], score_u[method], alpha=0.25)
+            b = plt.fill_between(MC_iterations_list, score_l[method], score_u[method], color=colors[method], alpha=0.25)
             lines.append(line)
             betweens.append(b)
-        plt.legend(lines, methods)
+        plt.legend(lines, methods,ncol=2,loc="upper left")
 
         plt.xlabel('Episodes')
-        plt.ylabel('Residual ($\hat{G} - G$)')
+        plt.ylabel('Residual ($\hat{G} - \mathcal{G}$)')
         plt.savefig(resultsfolder + "variance_test_" + str(MC_iterations) + tag + ".pdf")
 
         plt.close()
@@ -173,9 +216,11 @@ if __name__ == '__main__':
     # DR_methods = ["WDR","WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
     # methods = ["SPDIS", "WSPDIS", "SINCRIS", "WSINCRIS"]
     WDRSIS_methods = ["WDR", "WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    all_methods = ["IS", "SIS", "PDIS", "SPDIS", "INCRIS", "SINCRIS"]  # SIS variants use Q-based identification
-    weighted_all_methods = ["W" + method for method in all_methods]
-    variance_test(methods=WDRSIS_methods, store_results=True,tag="WEIGHTED_DRSIS", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
-                  trajectories_from_file=True,load_scores=False)
+    all_methods = ["IS","SIS","PDIS","SPDIS","INCRIS","SINCRIS","SDRE","SSDRE"] # SIS variants use Q-based identification
+    weighted_all_methods = ["W"+method for method in all_methods if "SDRE" not in method] + [ "SDRE","SSDRE"] + ["WDR", "WDRSIS"]
+    #all_methods = ["IS", "SIS", "PDIS", "SPDIS", "INCRIS", "SINCRIS"]  # SIS variants use Q-based identification
+    #weighted_all_methods = ["W" + method for method in all_methods]
+    variance_test(methods=weighted_all_methods, store_results=True,tag="LARGER_HORIZON", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
+                  trajectories_from_file=False,load_scores=False)
     #variance_test(methods=DR_methods, store_results=True, tag="final_DR_methods_eps0.01_cardinality2", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
     #              trajectories_from_file=True,load_scores=True)
