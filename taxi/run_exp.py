@@ -373,50 +373,51 @@ def plot(sizes,scores,methods,eval_scores, resultsfolder,MC_iterations,tag):
 		#      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
 		#     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
 		"WIS": "o",
-		"WSIS": "x",
-		"WPDIS": "o",
+		"WSIS": "^",
+		"WPDIS": "D",
 		"WSPDIS": "x",
-		# "WSIS (Lift states)": "tab:green",
-		# "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple",
+		# "SIS (Lift states)": "tab:green",
+		# "SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
 
-		"WINCRIS": "o",
-		"WSINCRIS": "x",
-		"WDR": "o",
-		# "WDRSIS (Lift states)": "tab:green",
-		# "WDRSIS (Covariance testing)": "tab:red",
-		# "WDRSIS (Q-based)": "tab:purple",
-		"WDRSIS": "x",
+		"WINCRIS": "+",
+		"WSINCRIS": "8",
+		"WDR": "P",
+		# "DRSIS (Lift states)": "tab:green",
+		# "DRSIS (Covariance testing)": "tab:red",
+		# "DRSIS (Q-based)": "tab:purple",
+		"WDRSIS": "v",
 		# "SPDIS": "tab:green",
 
 		# "SINCRIS": "tab:grey",
 
-		"SDRE": "o", "SSDRE": "x",
+		"SDRE": ">", "SSDRE": "<",
 	}
 	colors = {
 		# "IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
-		#     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
+		#     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:bron",
 		#      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
 		#     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
-		"WIS": "tab:blue",
-		"WSIS": "tab:blue",
-		"WPDIS": "tab:orange",
-		"WSPDIS": "tab:orange",
-		# "WSIS (Lift states)": "tab:green",
-		# "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple",
+		"WIS": "tab:red",
+		"WSIS": "tab:orange",
+		"WPDIS": "tab:blue",
+		"WSPDIS": "tab:purple",
+		# "SIS (Lift states)": "tab:green",
+		# "SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
 
-		"WINCRIS": "tab:green",
-		"WSINCRIS": "tab:green",
-		"WDR": "tab:grey",
-		# "WDRSIS (Lift states)": "tab:green",
-		# "WDRSIS (Covariance testing)": "tab:red",
-		# "WDRSIS (Q-based)": "tab:purple",
-		"WDRSIS": "tab:grey",
+		"WINCRIS": "k",
+		"WSINCRIS": "tab:grey",
+		"WDR": "tab:brown",
+		# "DRSIS (Lift states)": "tab:green",
+		# "DRSIS (Covariance testing)": "tab:red",
+		# "DRSIS (Q-based)": "tab:purple",
+		"WDRSIS": "tab:olive",
 		# "SPDIS": "tab:green",
 
 		# "SINCRIS": "tab:grey",
 
-		"SDRE": "tab:red", "SSDRE": "tab:red",
+		"SDRE": "tab:cyan", "SSDRE": "tab:pink"
 	}
+	plt.figure(figsize=(5, 5))
 	MSEs = {}
 	score_l={}
 	score_u = {}
@@ -428,8 +429,8 @@ def plot(sizes,scores,methods,eval_scores, resultsfolder,MC_iterations,tag):
 		score_m[method] = []
 		MSEs[method] = []
 		for idx,size in enumerate(sizes):
-			sc = scores[method][idx]
-			m = np.mean(sc) - eval_scores[idx]
+			sc = scores[method][idx]*size
+			m = (np.mean(sc) - eval_scores[idx]*size)
 			s = np.std(sc) / np.sqrt(len(sc))
 			score_l[method].append(m - s)
 			score_u[method].append(m + s)
@@ -445,11 +446,12 @@ def plot(sizes,scores,methods,eval_scores, resultsfolder,MC_iterations,tag):
 		b = plt.fill_between(sizes, score_l[method], score_u[method], color=colors[method],alpha=0.25)
 		lines.append(line)
 		betweens.append(b)
-	#plt.yscale('log')
+	#plt.yscale('symlog')
 	plt.legend(lines, methods)
 
 	plt.xlabel('Effective horizon (' +r"$H$" + ')')
-	plt.ylabel("Residual (" + r"$\frac{\hat{G} - \mathcal{G}}{H}$" +")")
+	plt.ylabel("Residual (" + r"$\hat{G} - \mathcal{G}$" +")")
+	plt.tight_layout()
 	plt.savefig(resultsfolder + "variance_test_" + str(MC_iterations) + tag + ".pdf")
 
 	plt.close()

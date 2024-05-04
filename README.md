@@ -19,10 +19,11 @@ expected return.
 For the most recent paper on state-based importance sampling, which also uses this code, please see:
 
 David M. Bossens & Philip S. Thomas (2024). Low Variance Off-policy Evaluation with State-based Importance Sampling. 
+IEEE Conference on Artificial Intelligence (CAI 2024).
 https://arxiv.org/abs/2212.03932
 
 
 There are currently three scripts:
 * one_D_Domain.py : to run experiments on lift domains.
-* IM_domain.py : to run experiments on inventory management. based on RCMDP repository (link to come soon)
+* IM_domain.py : to run experiments on inventory management. based on the RCMDP repository https://github.com/bossdm/RCMDP/blob/main/InventoryManagement.py
 * taxi/run_exp.py : to run experiments on taxi. based on https://github.com/zt95/infinite-horizon-off-policy-estimation/tree/master/taxi

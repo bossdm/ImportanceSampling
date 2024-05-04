@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(
                     prog = 'One D domain',
                     description = 'run RL on a one D problem with lift states')
 parser.add_argument('--method', dest='method',type=str,default="MC") #MC or DR
-parser.add_argument('--stochastic', dest='stochastic',type=str,default="deterministic") # deterministic or stochastic
+parser.add_argument('--stochastic', dest='stochastic',type=str,default="stochastic") # deterministic or stochastic
 parser.add_argument('--tag',dest="tag",type=str,default="") #
 parser.add_argument('--load_scores',dest="load_scores",type=bool)
 
@@ -159,18 +159,21 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
             MSEs[method] = []
 
         if load_scores:
-            # tag= "SIS_METHODS"
-            # scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
-            # SIS_scores, eval_score = pickle.load(open(scorefile,"rb"))
-            # tag = "final_DR_methods_eps0.01cardinality2"
-            # scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
-            # DR_scores, eval_score = pickle.load(open(scorefile,"rb"))
-            # scores = {**SIS_scores, **DR_scores}
-            tag = "SIS_METHODS"
-            scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
-            # pickle.dump((scores, eval_score), open(scorefile, "wb"))
-            scores, eval_score = pickle.load(open(scorefile,"rb"))
-            #scores["WDRSIS"] = scores["WDRSIS (Q-based)"]
+            if args.stochastic=="stochastic":
+                tag= "SIS_METHODS"
+                scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
+                SIS_scores, eval_score = pickle.load(open(scorefile,"rb"))
+                tag = "final_DR_methods_eps0.01cardinality2"
+                scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
+                DR_scores, eval_score = pickle.load(open(scorefile,"rb"))
+                scores = {**SIS_scores, **DR_scores}
+                scores["WDRSIS"] = scores["WDRSIS (Q-based)"]
+            else:
+                tag = "SIS_METHODS"
+                scorefile = resultsfolder + "variance_test_" + str(MC_iterations) + stoch_string + tag + "_scores.pkl"
+                # pickle.dump((scores, eval_score), open(scorefile, "wb"))
+                scores, eval_score = pickle.load(open(scorefile,"rb"))
+
             print("loaded scores ", scores)
             print("loaded eval score ", eval_score)
         else:
@@ -195,63 +198,64 @@ def variance_test(stochastic,store_results,methods,tag,scale,epsilon_c,epsilon_q
                 #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
                 #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
                 #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
-                    "IS": "o",
-                    "SIS": "x",
-                    "PDIS": "o",
-                "SPDIS": "x",
+                    "WIS": "o",
+                    "WSIS": "^",
+                    "WPDIS": "D",
+                "WSPDIS": "x",
                 # "SIS (Lift states)": "tab:green",
                     #"SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
 
-                    "INCRIS": "o",
-                "SINCRIS": "x",
-                    "DR": "o",
+                    "WINCRIS": "+",
+                "WSINCRIS": "8",
+                    "WDR": "P",
                     #"DRSIS (Lift states)": "tab:green",
                     #"DRSIS (Covariance testing)": "tab:red",
                     #"DRSIS (Q-based)": "tab:purple",
-                   "DRSIS": "x",
+                   "WDRSIS": "v",
                     #"SPDIS": "tab:green",
 
                    #"SINCRIS": "tab:grey",
 
-                    "SDRE": "o", "SSDRE": "x",
+                    "SDRE": ">", "SSDRE": "<",
                      }
             colors={
                 # "IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
                 #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:bron",
                 #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
                 #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
-                    "IS": "tab:blue",
-                    "SIS": "tab:blue",
-                    "PDIS": "tab:orange",
-                "SPDIS": "tab:orange",
+                    "WIS": "tab:red",
+                    "WSIS": "tab:orange",
+                    "WPDIS": "tab:blue",
+                "WSPDIS": "tab:purple",
                 # "SIS (Lift states)": "tab:green",
                     #"SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
 
-                    "INCRIS": "tab:green",
-                "SINCRIS": "tab:green",
-                    "DR": "tab:grey",
+                    "WINCRIS": "k",
+                "WSINCRIS": "tab:grey",
+                    "WDR": "tab:brown",
                     #"DRSIS (Lift states)": "tab:green",
                     #"DRSIS (Covariance testing)": "tab:red",
                     #"DRSIS (Q-based)": "tab:purple",
-                   "DRSIS": "tab:grey",
+                   "WDRSIS": "tab:olive",
                     #"SPDIS": "tab:green",
 
                    #"SINCRIS": "tab:grey",
 
-                    "SDRE": "tab:red", "SSDRE": "tab:red",
+                    "SDRE": "tab:cyan", "SSDRE": "tab:pink"
                     }
-
+            plt.figure(figsize=(5,5))
             lines=[]
             betweens=[]
             for method in methods:
-                line, = plt.plot(sizes,score_m[method],marker=markers[method],color=colors[method],scaley=scale)
+                line, = plt.plot(sizes,score_m[method],marker=markers[method],color=colors[method])
                 b = plt.fill_between(sizes,  score_l[method],  score_u[method],color=colors[method],alpha=0.25)
                 lines.append(line)
                 betweens.append(b)
             plt.legend(lines,methods)
-
+            plt.yscale("linear")
             plt.xlabel('Domain size')
             plt.ylabel('Residual ($\hat{G} - \mathcal{G}$)')
+            plt.tight_layout()
             plt.savefig(resultsfolder+"variance_test_"+str(MC_iterations)+tag+".pdf")
 
             plt.close()
@@ -299,10 +303,10 @@ if __name__ == '__main__':
     WSIS_methods = ["WIS", "WSIS (Lift states)", "WSIS (Covariance testing)", "WSIS (Q-based)"]
     DRSIS_methods = ["DR", "DRSIS (Lift states)", "DRSIS (Covariance testing)", "DRSIS (Q-based)"]
     WDRSIS_methods = ["WDR", "WDRSIS (Lift states)", "WDRSIS (Covariance testing)", "WDRSIS (Q-based)"]
-    all_methods = ["IS","SIS","PDIS","SPDIS","INCRIS","SINCRIS","SDRE","SSDRE"] # SIS variants use Q-based identification
-    weighted_all_methods = ["W"+method for method in all_methods if "SDRE" not in method] + [ "SDRE","SSDRE"] + ["WDR", "WDRSIS"]
+    all_methods = ["IS","SIS","PDIS","SPDIS","INCRIS","SINCRIS"]#"SDRE","SSDRE"] # SIS variants use Q-based identification
+    weighted_all_methods = ["W"+method for method in all_methods if "SDRE" not in method]  + ["WDR", "WDRSIS"] #+ [ "SDRE","SSDRE"]
 
 
-    variance_test(methods=all_methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
+    variance_test(methods=weighted_all_methods, stochastic=args.stochastic, store_results=True, tag=args.tag,
                   scale="log",epsilon_c=0.01,epsilon_q=1.0,
                   max_t=float("inf"),trajectories_from_file=True,load_scores=True)

@@ -44,7 +44,7 @@ def get_scores(methods, repetitions, trajectories_from_file, MC_iterations,env,p
 def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectories_from_file,load_scores):
     check_folder("IM_trajectories/")
     S=10
-    MC_iterations_list = [100] #250,500,1000]# #[100,1000]
+    MC_iterations_list = [100,250,500,1000] #250,500,1000]# #[100,1000]
     resultsfolder = "IM_results_NEW/"  # results folder
     check_folder(resultsfolder)
     repetitions=50
@@ -52,7 +52,7 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectori
     d = np.zeros(1)
     # domain
     env = InventoryManagement(gamma, d, S, using_nextstate=False)  # real samples
-    env.stepsPerEpisode = 1000
+    env.stepsPerEpisode = 100
     env.stage = "test"
     p_b_agent = RandomAgent(len(env.actions), uncertainty_set=None)
     behav = [[1. / S for a in range(len(env.actions))] for i in range(S)]
@@ -150,64 +150,64 @@ def variance_test(store_results,methods,tag,epsilon_c,epsilon_q,max_t,trajectori
             #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
             #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
             "WIS": "o",
-            "WSIS": "x",
-            "WPDIS": "o",
+            "WSIS": "^",
+            "WPDIS": "D",
             "WSPDIS": "x",
-            # "WSIS (Lift states)": "tab:green",
-            # "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple",
+            # "SIS (Lift states)": "tab:green",
+            # "SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
 
-            "WINCRIS": "o",
-            "WSINCRIS": "x",
-            "WDR": "o",
-            # "WDRSIS (Lift states)": "tab:green",
-            # "WDRSIS (Covariance testing)": "tab:red",
-            # "WDRSIS (Q-based)": "tab:purple",
-            "WDRSIS": "x",
+            "WINCRIS": "+",
+            "WSINCRIS": "8",
+            "WDR": "P",
+            # "DRSIS (Lift states)": "tab:green",
+            # "DRSIS (Covariance testing)": "tab:red",
+            # "DRSIS (Q-based)": "tab:purple",
+            "WDRSIS": "v",
             # "SPDIS": "tab:green",
 
             # "SINCRIS": "tab:grey",
 
-            "SDRE": "o", "SSDRE": "x",
+            "SDRE": ">", "SSDRE": "<",
         }
         colors = {
             # "IS": "tab:blue","PDIS":"tab:orange","SIS (Lift states)":"tab:green","SIS (Covariance testing)":"tab:red",
-            #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:brown",
+            #     "SIS (Q-based)": "tab:purple","SIS": "tab:purple","INCRIS":"tab:bron",
             #      "DR": "tab:blue", "DRSIS (Lift states)": "tab:green", "DRSIS (Covariance testing)": "tab:red",
             #     "DRSIS (Q-based)": "tab:purple","DRSIS": "tab:purple",
-            "WIS": "tab:blue",
-            "WSIS": "tab:blue",
-            "WPDIS": "tab:orange",
-            "WSPDIS": "tab:orange",
-            # "WSIS (Lift states)": "tab:green",
-            # "WSIS (Covariance testing)": "tab:red", "WSIS (Q-based)": "tab:purple",
+            "WIS": "tab:red",
+            "WSIS": "tab:orange",
+            "WPDIS": "tab:blue",
+            "WSPDIS": "tab:purple",
+            # "SIS (Lift states)": "tab:green",
+            # "SIS (Covariance testing)": "tab:red", "SIS (Q-based)": "tab:purple",
 
-            "WINCRIS": "tab:green",
-            "WSINCRIS": "tab:green",
-            "WDR": "tab:grey",
-            # "WDRSIS (Lift states)": "tab:green",
-            # "WDRSIS (Covariance testing)": "tab:red",
-            # "WDRSIS (Q-based)": "tab:purple",
-            "WDRSIS": "tab:grey",
+            "WINCRIS": "k",
+            "WSINCRIS": "tab:grey",
+            "WDR": "tab:brown",
+            # "DRSIS (Lift states)": "tab:green",
+            # "DRSIS (Covariance testing)": "tab:red",
+            # "DRSIS (Q-based)": "tab:purple",
+            "WDRSIS": "tab:olive",
             # "SPDIS": "tab:green",
 
             # "SINCRIS": "tab:grey",
 
-            "SDRE": "tab:red", "SSDRE": "tab:red",
+            "SDRE": "tab:cyan", "SSDRE": "tab:pink"
         }
         lines = []
         betweens = []
+        plt.figure(figsize=(5, 5))
         plt.ylim([-500,500])
         for method in methods:
             line, = plt.plot(MC_iterations_list, score_m[method], marker=markers[method], color=colors[method])
             b = plt.fill_between(MC_iterations_list, score_l[method], score_u[method], color=colors[method], alpha=0.25)
             lines.append(line)
             betweens.append(b)
-        plt.legend(lines, methods,ncol=2,loc="upper left")
-
+        plt.legend(lines,methods,ncol=2)
         plt.xlabel('Episodes')
         plt.ylabel('Residual ($\hat{G} - \mathcal{G}$)')
+        plt.tight_layout()
         plt.savefig(resultsfolder + "variance_test_" + str(MC_iterations) + tag + ".pdf")
-
         plt.close()
 
 if __name__ == '__main__':
@@ -220,7 +220,7 @@ if __name__ == '__main__':
     weighted_all_methods = ["W"+method for method in all_methods if "SDRE" not in method] + [ "SDRE","SSDRE"] + ["WDR", "WDRSIS"]
     #all_methods = ["IS", "SIS", "PDIS", "SPDIS", "INCRIS", "SINCRIS"]  # SIS variants use Q-based identification
     #weighted_all_methods = ["W" + method for method in all_methods]
-    variance_test(methods=weighted_all_methods, store_results=True,tag="LARGER_HORIZON", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
-                  trajectories_from_file=False,load_scores=False)
+    variance_test(methods=weighted_all_methods, store_results=True,tag="_WEIGHTED_ALL", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
+                  trajectories_from_file=False,load_scores=True)
     #variance_test(methods=DR_methods, store_results=True, tag="final_DR_methods_eps0.01_cardinality2", epsilon_c=0.01,epsilon_q=50.0,max_t=10,
     #              trajectories_from_file=True,load_scores=True)
