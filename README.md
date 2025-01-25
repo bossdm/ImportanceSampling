@@ -19,8 +19,9 @@ expected return.
 For the most recent paper on state-based importance sampling, which also uses this code, please see:
 
 David M. Bossens & Philip S. Thomas (2024). Low Variance Off-policy Evaluation with State-based Importance Sampling. 
-IEEE Conference on Artificial Intelligence (CAI 2024).
-https://arxiv.org/abs/2212.03932
+IEEE Conference on Artificial Intelligence (CAI 2024). Available at 
+https://arxiv.org/abs/2212.03932 and 
+https://ieeexplore.ieee.org/abstract/document/10605477
 
 
 There are currently three scripts:
